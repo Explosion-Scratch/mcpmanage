@@ -30,7 +30,13 @@ export class WindsurfAdapter implements AppAdapter {
     if (!data) {
       data = {};
     }
-    data.mcpServers = servers;
+    if (!data.mcpServers) {
+      data.mcpServers = {};
+    }
+    data.mcpServers = {
+      ...data.mcpServers,
+      ...servers
+    };
     return await FileService.writeJSON(this.getPath(), data);
   }
 }

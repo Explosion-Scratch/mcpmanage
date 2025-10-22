@@ -1,20 +1,23 @@
 import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { MCPServers } from '../../shared/types';
 import { AppAdapter } from './AppAdapter';
 import { FileService } from '../services/FileService';
 
-export class CursorAdapter implements AppAdapter {
-  name = 'Cursor';
-  icon = 'https://www.cursor.com/favicon.ico';
-  color = '#000000';
+export class QwenAdapter implements AppAdapter {
+  name = 'Qwen Code CLI';
+  icon = 'https://qianwen.aliyun.com/favicon.ico';
+  color = '#5f46e8';
   
   getPath(): string {
-    return '~/Library/Application Support/Cursor/User/globalStorage/mcp.json';
+    return '~/.config/qwen/config.json';
   }
   
   async configExists(): Promise<boolean> {
-    const appPath = '/Applications/Cursor.app';
-    return fs.existsSync(appPath);
+    const configPath = this.getPath().replace('~', os.homedir());
+    const configDir = path.dirname(configPath);
+    return fs.existsSync(configDir);
   }
   
   async getServers(): Promise<MCPServers> {
@@ -40,3 +43,4 @@ export class CursorAdapter implements AppAdapter {
     return await FileService.writeJSON(this.getPath(), data);
   }
 }
+

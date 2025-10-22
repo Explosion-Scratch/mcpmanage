@@ -4,6 +4,9 @@ import { ZedAdapter } from './ZedAdapter';
 import { CursorAdapter } from './CursorAdapter';
 import { VSCodeAdapter } from './VSCodeAdapter';
 import { WindsurfAdapter } from './WindsurfAdapter';
+import { GeminiAdapter } from './GeminiAdapter';
+import { QwenAdapter } from './QwenAdapter';
+import { OpencodeAdapter } from './OpencodeAdapter';
 
 export const APP_ADAPTERS: AppAdapter[] = [
   new ClaudeAdapter(),
@@ -11,6 +14,9 @@ export const APP_ADAPTERS: AppAdapter[] = [
   new CursorAdapter(),
   new VSCodeAdapter(),
   new WindsurfAdapter(),
+  new GeminiAdapter(),
+  new QwenAdapter(),
+  new OpencodeAdapter(),
 ];
 
 export async function getAvailableAdapters(): Promise<AppAdapter[]> {

@@ -18,12 +18,44 @@ import {
   ChevronDown,
   ShieldAlert,
   FileJson,
+  Pencil,
 } from 'lucide-react';
+import hljs from 'highlight.js/lib/core';
+import json from 'highlight.js/lib/languages/json';
+import markdown from 'highlight.js/lib/languages/markdown';
+import 'highlight.js/styles/github.css';
 import { cn } from './lib/utils';
 import { Button, Input, Label, Switch, Badge, ServerIcon } from './components/ui';
 import type { AppConfig, MCPServerWithMetadata, PermissionLevel } from '../../shared/types';
 
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('markdown', markdown);
+
 type Tab = 'servers' | 'apps' | 'explore' | 'studio';
+
+function SyntaxHighlightedText({ text }: { text: string }) {
+  const [highlightedHtml, setHighlightedHtml] = useState('');
+
+  useEffect(() => {
+    let isJson = false;
+    try {
+      JSON.parse(text);
+      isJson = true;
+    } catch (e) {
+      isJson = false;
+    }
+
+    const language = isJson ? 'json' : 'markdown';
+    const highlighted = hljs.highlight(text, { language }).value;
+    setHighlightedHtml(highlighted);
+  }, [text]);
+
+  return (
+    <pre className="text-sm whitespace-pre-wrap font-mono max-h-[500px] overflow-y-auto bg-gray-50 text-gray-900 p-3 rounded-md">
+      <code dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
+    </pre>
+  );
+}
 
 export default function MCPManager() {
   const [activeTab, setActiveTab] = useState<Tab>('servers');
@@ -34,6 +66,33 @@ export default function MCPManager() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === '1') {
+          e.preventDefault();
+          setActiveTab('servers');
+          setSelectedServerId(null);
+        } else if (e.key === '2') {
+          e.preventDefault();
+          setActiveTab('apps');
+        } else if (e.key === '3') {
+          e.preventDefault();
+          setActiveTab('explore');
+        } else if (e.key === '4') {
+          e.preventDefault();
+          setActiveTab('studio');
+        }
+      } else if (e.key === 'Escape' && selectedServerId) {
+        e.preventDefault();
+        setSelectedServerId(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedServerId]);
 
   const loadData = async () => {
     const appsData = await window.electronAPI.getApps();
@@ -81,10 +140,18 @@ export default function MCPManager() {
   };
 
   const handleUpdateServer = async (updatedServer: MCPServerWithMetadata) => {
-    const success = await window.electronAPI.updateServer(
+    const success = await window.electronAPI.updateMasterServer(
       updatedServer.id,
-      `${updatedServer.command} ${(updatedServer.args || []).join(' ')}`,
-      updatedServer.env
+      {
+        name: updatedServer.name,
+        description: updatedServer.description,
+        iconUrl: updatedServer.iconUrl,
+        command: updatedServer.command,
+        args: updatedServer.args,
+        env: updatedServer.env,
+        permissions: updatedServer.permissions,
+        apps: updatedServer.apps,
+      }
     );
     if (success) {
       await loadData();
@@ -125,18 +192,21 @@ export default function MCPManager() {
               setActiveTab('servers');
               setSelectedServerId(null);
             }}
+            shortcut="⌘1"
           />
           <SidebarItem
             icon={AppWindow}
             label="Manage apps"
             active={activeTab === 'apps'}
             onClick={() => setActiveTab('apps')}
+            shortcut="⌘2"
           />
           <SidebarItem
             icon={Compass}
             label="Explore servers"
             active={activeTab === 'explore'}
             onClick={() => setActiveTab('explore')}
+            shortcut="⌘3"
           />
 
           <div className="pt-6 pb-2 px-2">
@@ -149,6 +219,7 @@ export default function MCPManager() {
             label="Studio"
             active={activeTab === 'studio'}
             onClick={() => setActiveTab('studio')}
+            shortcut="⌘4"
           />
         </nav>
 
@@ -192,11 +263,13 @@ function SidebarItem({
   label,
   active,
   onClick,
+  shortcut,
 }: {
   icon: any;
   label: string;
   active: boolean;
   onClick: () => void;
+  shortcut?: string;
 }) {
   return (
     <button
@@ -214,7 +287,15 @@ function SidebarItem({
           active ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-500'
         )}
       />
-      {label}
+      <span className="flex-1 text-left">{label}</span>
+      {shortcut && (
+        <span className={cn(
+          'text-[10px] font-mono px-1 py-0.5 rounded transition-colors',
+          active ? 'text-gray-500' : 'text-gray-400 opacity-0 group-hover:opacity-100'
+        )}>
+          {shortcut}
+        </span>
+      )}
     </button>
   );
 }
@@ -245,6 +326,23 @@ function ManageServersView({
   const [newIcon, setNewIcon] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [jsonImport, setJsonImport] = useState('');
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === 'n') {
+          e.preventDefault();
+          setIsAdding(!isAdding);
+        } else if (e.key === 'i') {
+          e.preventDefault();
+          setIsImporting(!isImporting);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAdding, isImporting]);
 
   useEffect(() => {
     if (!newName && newCmd.includes('@modelcontextprotocol/server-')) {
@@ -320,20 +418,22 @@ function ManageServersView({
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
-            size="icon"
-            title="Import JSON"
+            size="sm"
+            className="gap-2"
             onClick={() => setIsImporting(!isImporting)}
           >
             <FileJson className="w-4 h-4" />
+            <span className="text-[10px] font-mono text-gray-400">⌘I</span>
           </Button>
           <Button
             variant={isAdding ? 'secondary' : 'primary'}
             size="sm"
-            className="gap-1"
+            className="gap-2"
             onClick={() => setIsAdding(!isAdding)}
           >
             {isAdding ? <XCircle className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
             {isAdding ? 'Cancel' : 'Add Server'}
+            {!isAdding && <span className="text-[10px] font-mono opacity-70">⌘N</span>}
           </Button>
         </div>
       </header>
@@ -351,6 +451,7 @@ function ManageServersView({
             }
             value={jsonImport}
             onChange={e => setJsonImport(e.target.value)}
+            spellCheck={false}
           />
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setIsImporting(false)} size="sm">
@@ -385,6 +486,7 @@ function ManageServersView({
                 placeholder="npx -y @modelcontextprotocol/server-name ..."
                 value={newCmd}
                 onChange={e => setNewCmd(e.target.value)}
+                spellCheck={false}
               />
             </div>
           </div>
@@ -512,6 +614,12 @@ function ServerDetailView({
   onUpdate: (s: MCPServerWithMetadata) => void;
   onToggle: (id: string) => void;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(server.name);
+  const [editedDescription, setEditedDescription] = useState(server.description || '');
+  const [editedIconUrl, setEditedIconUrl] = useState(server.iconUrl || '');
+  const [editedCommand, setEditedCommand] = useState(`${server.command} ${(server.args || []).join(' ')}`);
+
   const toggleAppInclusion = async (appName: string) => {
     const serverApps = server.apps || [];
     const isIncluded = serverApps.includes(appName);
@@ -527,16 +635,41 @@ function ServerDetailView({
     });
   };
 
+  const handleSave = () => {
+    const parts = editedCommand.trim().split(/\s+/);
+    const updatedServer = {
+      ...server,
+      name: editedName,
+      description: editedDescription,
+      iconUrl: editedIconUrl,
+      command: parts[0],
+      args: parts.slice(1),
+    };
+    onUpdate(updatedServer);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditedName(server.name);
+    setEditedDescription(server.description || '');
+    setEditedIconUrl(server.iconUrl || '');
+    setEditedCommand(`${server.command} ${(server.args || []).join(' ')}`);
+    setIsEditing(false);
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-50/50 animate-in slide-in-from-right-4 duration-300">
       <header className="h-14 shrink-0 px-4 flex items-center gap-2 border-b border-gray-200 bg-white/80 backdrop-blur-md sticky top-0 z-10">
         <Button
           variant="ghost"
           size="sm"
-          className="-ml-2 text-gray-500 gap-1"
+          className="-ml-2 text-gray-500 gap-2"
           onClick={onBack}
         >
           <ChevronLeft className="w-4 h-4" /> Servers
+          <span className="text-[10px] font-mono text-gray-400">
+            esc
+          </span>
         </Button>
         <span className="text-gray-300">/</span>
         <div className="flex items-center gap-2 font-medium text-sm">
@@ -549,28 +682,87 @@ function ServerDetailView({
         <div className="max-w-3xl mx-auto p-8 space-y-8">
           <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex gap-6 items-start">
             <div className="w-20 h-20 rounded-[18px] bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-              <ServerIcon url={server.iconUrl} className="w-10 h-10" />
+              <ServerIcon url={isEditing ? editedIconUrl : server.iconUrl} className="w-10 h-10" />
             </div>
             <div className="flex-1 space-y-4">
-              <div>
-                <div className="flex items-center justify-between">
-                  <h1 className="text-2xl font-semibold text-gray-900">{server.name}</h1>
-                  <Switch
-                    checked={server.enabled}
-                    onChange={() => onToggle(server.id)}
-                  />
+              {!isEditing ? (
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-semibold text-gray-900">{server.name}</h1>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={server.enabled}
+                        onChange={() => onToggle(server.id)}
+                      />
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => setIsEditing(true)}
+                      >
+                        <Pencil className="w-3 h-3" />
+                        Edit
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-gray-500 mt-1">
+                    {server.description || 'No description provided.'}
+                  </p>
                 </div>
-                <p className="text-gray-500 mt-1">
-                  {server.description || 'No description provided.'}
-                </p>
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <Label>Server Name</Label>
+                    <Input
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      placeholder="Server name"
+                    />
+                  </div>
+                  <div>
+                    <Label>Description</Label>
+                    <Input
+                      value={editedDescription}
+                      onChange={(e) => setEditedDescription(e.target.value)}
+                      placeholder="Short description"
+                    />
+                  </div>
+                  <div>
+                    <Label>Icon URL</Label>
+                    <Input
+                      value={editedIconUrl}
+                      onChange={(e) => setEditedIconUrl(e.target.value)}
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="primary" size="sm" onClick={handleSave}>
+                      Save
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleCancel}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <Label>Command</Label>
-                <div className="font-mono text-xs bg-gray-900 text-gray-200 p-3 rounded-md overflow-x-auto flex items-center">
-                  <span className="text-blue-400 mr-2">$</span>
-                  {server.command} {(server.args || []).join(' ')}
-                </div>
+                {!isEditing ? (
+                  <div className="font-mono text-xs bg-gray-900 text-gray-200 p-3 rounded-md overflow-x-auto flex items-center">
+                    <span className="text-gray-500 mr-2">$</span>
+                    <span className="text-blue-400">{server.command}</span>
+                    <span className="ml-2">{(server.args || []).join(' ')}</span>
+                  </div>
+                ) : (
+                  <Input
+                    value={editedCommand}
+                    onChange={(e) => setEditedCommand(e.target.value)}
+                    className="font-mono text-xs"
+                    placeholder="npx -y @modelcontextprotocol/server-name ..."
+                    spellCheck={false}
+                  />
+                )}
               </div>
             </div>
           </section>
@@ -583,35 +775,41 @@ function ServerDetailView({
                   Permissions
                 </h3>
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-100">
+                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-100 group">
                     <div>
                       <div className="font-medium text-sm text-gray-900">Always Ask</div>
                       <div className="text-xs text-gray-500">
                         Prompt user before executing tools or accessing resources
                       </div>
                     </div>
-                    <input
-                      type="radio"
-                      name="perms"
-                      checked={server.permissions === 'always_ask'}
-                      onChange={() => onUpdate({ ...server, permissions: 'always_ask' })}
-                      className="text-gray-900 focus:ring-gray-900"
-                    />
+                    <div className="relative">
+                      <input
+                        type="radio"
+                        name="perms"
+                        checked={server.permissions === 'always_ask'}
+                        onChange={() => onUpdate({ ...server, permissions: 'always_ask' })}
+                        className="peer sr-only"
+                      />
+                      <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-white transition-all peer-checked:border-gray-900 peer-checked:border-[6px] group-hover:border-gray-400 peer-checked:group-hover:border-gray-900" />
+                    </div>
                   </label>
-                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors group">
                     <div>
                       <div className="font-medium text-sm text-gray-900">Allow without asking</div>
                       <div className="text-xs text-gray-500">
                         Automatically approve all requests from this server
                       </div>
                     </div>
-                    <input
-                      type="radio"
-                      name="perms"
-                      checked={server.permissions === 'allow'}
-                      onChange={() => onUpdate({ ...server, permissions: 'allow' })}
-                      className="text-gray-900 focus:ring-gray-900"
-                    />
+                    <div className="relative">
+                      <input
+                        type="radio"
+                        name="perms"
+                        checked={server.permissions === 'allow'}
+                        onChange={() => onUpdate({ ...server, permissions: 'allow' })}
+                        className="peer sr-only"
+                      />
+                      <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-white transition-all peer-checked:border-gray-900 peer-checked:border-[6px] group-hover:border-gray-400 peer-checked:group-hover:border-gray-900" />
+                    </div>
                   </label>
                 </div>
               </section>
@@ -760,6 +958,8 @@ interface Tool {
   };
 }
 
+type StudioTab = 'console' | 'parameters' | 'response';
+
 function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
   const [selectedServer, setSelectedServer] = useState<string>(servers[0]?.id || '');
   const [isRunning, setIsRunning] = useState(false);
@@ -769,7 +969,23 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
   const [toolArgs, setToolArgs] = useState<Record<string, any>>({});
   const [lastResult, setLastResult] = useState<any>(null);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [activeTab, setActiveTab] = useState<StudioTab>('console');
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && selectedTool && isRunning && !isExecuting) {
+        e.preventDefault();
+        handleRunTool();
+      } else if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey && !e.shiftKey && !isRunning) {
+        e.preventDefault();
+        handleStartStop();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedTool, isRunning, isExecuting]);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -799,6 +1015,10 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
       setToolArgs({});
     }
     setLastResult(null);
+    
+    if (selectedTool) {
+      setActiveTab('parameters');
+    }
   }, [selectedTool]);
 
   const handleStartStop = async () => {
@@ -841,6 +1061,7 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
     if (!selectedTool || !isRunning) return;
     
     setIsExecuting(true);
+    setActiveTab('response');
     addLog(`[${new Date().toLocaleTimeString()}] Executing tool: ${selectedTool.name}`);
     
     try {
@@ -870,17 +1091,17 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
     
     if (prop.type === 'boolean') {
       return (
-        <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-          <div>
+        <div key={key} className="flex items-center gap-3 p-3 bg-gray-50 rounded-md">
+          <Switch
+            checked={!!value}
+            onChange={() => updateToolArg(key, !value)}
+          />
+          <div className="flex-1">
             <Label className="text-sm font-medium">{key}</Label>
             {prop.description && (
               <p className="text-xs text-gray-500 mt-0.5">{prop.description}</p>
             )}
           </div>
-          <Switch
-            checked={!!value}
-            onChange={() => updateToolArg(key, !value)}
-          />
         </div>
       );
     }
@@ -1019,7 +1240,7 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
 
         <Button
           variant={isRunning ? 'danger' : 'primary'}
-          className="gap-1.5 min-w-[100px]"
+          className="gap-2"
           onClick={handleStartStop}
         >
           {isRunning ? (
@@ -1028,6 +1249,11 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
             <Play className="w-3.5 h-3.5 fill-current" />
           )}
           {isRunning ? 'Stop' : 'Start'}
+          {!isRunning && (
+            <span className="text-[10px] font-mono opacity-70">
+              ⏎
+            </span>
+          )}
         </Button>
 
         {isRunning ? (
@@ -1065,7 +1291,7 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                 key={tool.name}
                 onClick={() => setSelectedTool(tool)}
                 className={cn(
-                  'w-full text-left px-4 py-2 text-sm flex items-center gap-2 border-l-[3px]',
+                  'w-full text-left px-4 py-2 text-sm flex items-center gap-2 border-l-[3px] transition-colors',
                   selectedTool?.name === tool.name
                     ? 'bg-blue-50 border-blue-500 text-blue-900'
                     : 'border-transparent hover:bg-gray-50 text-gray-700'
@@ -1078,163 +1304,210 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 flex flex-col border-r border-gray-200 bg-white overflow-hidden">
-            <div className="px-4 py-2 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="font-medium text-gray-700">Parameters</span>
+        <div className="flex-1 flex flex-col bg-white overflow-hidden">
+          <div className="border-b border-gray-200 px-4 flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setActiveTab('console')}
+                className={cn(
+                  'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                  activeTab === 'console'
+                    ? 'border-gray-900 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                )}
+              >
+                Console
+              </button>
+              <button
+                onClick={() => setActiveTab('parameters')}
+                disabled={!selectedTool}
+                className={cn(
+                  'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                  activeTab === 'parameters'
+                    ? 'border-gray-900 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:text-gray-700',
+                  !selectedTool && 'opacity-40 cursor-not-allowed'
+                )}
+              >
+                Parameters
                 {selectedTool && (
-                  <span className="text-gray-400 flex items-center">
-                    <ChevronRight className="w-4 h-4" />{' '}
-                    <span className="font-mono text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                      {selectedTool.name}
-                    </span>
+                  <span className="ml-2 font-mono text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                    {selectedTool.name}
                   </span>
                 )}
-              </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('response')}
+                disabled={!lastResult}
+                className={cn(
+                  'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                  activeTab === 'response'
+                    ? 'border-gray-900 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:text-gray-700',
+                  !lastResult && 'opacity-40 cursor-not-allowed'
+                )}
+              >
+                Response
+              </button>
+            </div>
+            {activeTab === 'parameters' && selectedTool && (
               <Button
                 size="sm"
                 variant="primary"
-                disabled={!isRunning || !selectedTool || isExecuting}
-                className="gap-1"
+                disabled={!isRunning || isExecuting}
+                className="gap-2"
                 onClick={handleRunTool}
               >
                 <Play className="w-3 h-3" /> {isExecuting ? 'Running...' : 'Run Tool'}
+                {!isExecuting && (
+                  <span className="text-[10px] font-mono opacity-70">
+                    ⌘⏎
+                  </span>
+                )}
               </Button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {!selectedTool && (
-                <div className="text-center text-sm text-gray-400 italic py-8">
-                  Select a tool to configure parameters
-                </div>
-              )}
-              {selectedTool && (!selectedTool.inputSchema?.properties || Object.keys(selectedTool.inputSchema.properties).length === 0) && (
-                <div className="text-center text-sm text-gray-500 italic py-8">
-                  This tool requires no parameters
-                </div>
-              )}
-              {selectedTool?.inputSchema?.properties && 
-                Object.entries(selectedTool.inputSchema.properties).map(([key, prop]) => {
-                  const required = selectedTool.inputSchema?.required?.includes(key) || false;
-                  return renderInputForProperty(key, prop, required);
-                })
-              }
-            </div>
+            )}
+            {activeTab === 'response' && lastResult && (
+              <button
+                onClick={() => setLastResult(null)}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Clear
+              </button>
+            )}
+            {activeTab === 'console' && logs.length > 0 && (
+              <button
+                onClick={() => setLogs([])}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Clear
+              </button>
+            )}
           </div>
 
-          <div className="w-1/2 flex flex-col bg-white overflow-hidden">
-            <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Response</span>
-              {lastResult && (
-                <button
-                  onClick={() => setLastResult(null)}
-                  className="text-xs text-gray-500 hover:text-gray-700"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              {!lastResult && (
-                <div className="text-center text-sm text-gray-400 italic py-8">
-                  Tool response will appear here
+          <div className="flex-1 overflow-hidden">
+            {activeTab === 'console' && (
+              <div className="h-full flex flex-col bg-gray-900 text-gray-100 overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1">
+                  {logs.length === 0 && (
+                    <div className="text-gray-500 italic text-center py-8">
+                      No console output yet...
+                    </div>
+                  )}
+                  {logs.map((log, i) => (
+                    <div key={i} className="break-all leading-relaxed">
+                      <span className="text-gray-500 mr-2">{'>'}</span>
+                      {log}
+                    </div>
+                  ))}
+                  <div ref={logEndRef} />
                 </div>
-              )}
-              {lastResult && (
-                <div className={cn(
-                  'rounded-lg border p-4',
-                  lastResult.error 
-                    ? 'bg-red-50 border-red-200' 
-                    : 'bg-green-50 border-green-200'
-                )}>
-                  <div className="flex items-center gap-2 mb-3">
-                    {lastResult.error ? (
-                      <>
-                        <XCircle className="w-4 h-4 text-red-600" />
-                        <span className="text-sm font-medium text-red-900">Error</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        <span className="text-sm font-medium text-green-900">Success</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    {Array.isArray(lastResult.data) ? (
-                      lastResult.data.map((item: any, idx: number) => (
-                        <div key={idx} className="bg-white rounded-md p-3 border border-gray-200">
-                          {item.type === 'text' && (
-                            <div>
-                              <div className="text-xs font-medium text-gray-500 mb-2">Text Content</div>
-                              <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
-                                {item.text}
-                              </pre>
-                            </div>
-                          )}
-                          {item.type === 'resource' && (
-                            <div>
-                              <div className="text-xs font-medium text-gray-500 mb-2">Resource</div>
-                              <div className="text-sm text-gray-800">
-                                <div className="font-medium mb-1">{item.resource?.uri}</div>
-                                <pre className="text-xs whitespace-pre-wrap font-mono bg-gray-50 p-2 rounded">
-                                  {item.resource?.text || JSON.stringify(item.resource, null, 2)}
-                                </pre>
-                              </div>
-                            </div>
-                          )}
-                          {item.type === 'image' && (
-                            <div>
-                              <div className="text-xs font-medium text-gray-500 mb-2">Image</div>
-                              <img 
-                                src={`data:${item.mimeType};base64,${item.data}`} 
-                                alt="Tool result"
-                                className="max-w-full h-auto rounded"
-                              />
-                            </div>
-                          )}
-                          {!['text', 'resource', 'image'].includes(item.type) && (
-                            <pre className="text-xs text-gray-800 whitespace-pre-wrap font-mono">
-                              {JSON.stringify(item, null, 2)}
-                            </pre>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono bg-white rounded-md p-3 border border-gray-200">
-                        {typeof lastResult.data === 'string' 
-                          ? lastResult.data 
-                          : JSON.stringify(lastResult.data, null, 2)}
-                      </pre>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="h-48 flex flex-col bg-gray-900 text-gray-100 border-t border-gray-200">
-          <div className="px-4 py-1.5 border-b border-gray-800 flex items-center justify-between bg-gray-950">
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2">
-              <TerminalSquare className="w-3.5 h-3.5" /> Console
-            </span>
-            <button
-              onClick={() => setLogs([])}
-              className="text-xs text-gray-500 hover:text-gray-300"
-            >
-              Clear
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-3 font-mono text-xs space-y-1">
-            {logs.length === 0 && <div className="text-gray-600 italic">No output yet...</div>}
-            {logs.map((log, i) => (
-              <div key={i} className="break-all leading-relaxed">
-                <span className="text-gray-500 mr-2">{'>'}</span>
-                {log}
               </div>
-            ))}
-            <div ref={logEndRef} />
+            )}
+
+            {activeTab === 'parameters' && (
+              <div className="h-full overflow-y-auto p-6 space-y-4">
+                {!selectedTool && (
+                  <div className="text-center text-sm text-gray-400 italic py-8">
+                    Select a tool to configure parameters
+                  </div>
+                )}
+                {selectedTool && (!selectedTool.inputSchema?.properties || Object.keys(selectedTool.inputSchema.properties).length === 0) && (
+                  <div className="text-center text-sm text-gray-500 py-8">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                      <CheckCircle2 className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <div className="font-medium text-gray-700">No parameters required</div>
+                    <p className="text-xs mt-1">This tool can be executed without any input</p>
+                  </div>
+                )}
+                {selectedTool?.inputSchema?.properties && 
+                  Object.entries(selectedTool.inputSchema.properties).map(([key, prop]) => {
+                    const required = selectedTool.inputSchema?.required?.includes(key) || false;
+                    return renderInputForProperty(key, prop, required);
+                  })
+                }
+              </div>
+            )}
+
+            {activeTab === 'response' && (
+              <div className="h-full overflow-y-auto p-6">
+                {!lastResult && (
+                  <div className="text-center text-sm text-gray-400 italic py-8">
+                    Tool response will appear here after execution
+                  </div>
+                )}
+                {lastResult && (
+                  <div className="space-y-4">
+                    <div className={cn(
+                      'rounded-lg border p-3 flex items-center gap-2',
+                      lastResult.error 
+                        ? 'bg-red-50 border-red-200' 
+                        : 'bg-green-50 border-green-200'
+                    )}>
+                      {lastResult.error ? (
+                        <>
+                          <XCircle className="w-5 h-5 text-red-600" />
+                          <span className="text-sm font-medium text-red-900">Error</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          <span className="text-sm font-medium text-green-900">Success</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="space-y-3">
+                      {Array.isArray(lastResult.data) ? (
+                        lastResult.data.map((item: any, idx: number) => (
+                          <div key={idx} className="bg-white rounded-md p-3 border border-gray-200">
+                            {item.type === 'text' && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-500 mb-2">Text Content</div>
+                                <SyntaxHighlightedText text={item.text} />
+                              </div>
+                            )}
+                            {item.type === 'resource' && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-500 mb-2">Resource</div>
+                                <div className="text-sm text-gray-800">
+                                  <div className="font-medium mb-1">{item.resource?.uri}</div>
+                                  <pre className="text-xs whitespace-pre-wrap font-mono bg-gray-50 p-2 rounded max-h-[500px] overflow-y-auto">
+                                    {item.resource?.text || JSON.stringify(item.resource, null, 2)}
+                                  </pre>
+                                </div>
+                              </div>
+                            )}
+                            {item.type === 'image' && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-500 mb-2">Image</div>
+                                <img 
+                                  src={`data:${item.mimeType};base64,${item.data}`} 
+                                  alt="Tool result"
+                                  className="max-w-full h-auto rounded"
+                                />
+                              </div>
+                            )}
+                            {!['text', 'resource', 'image'].includes(item.type) && (
+                              <pre className="text-xs text-gray-800 whitespace-pre-wrap font-mono max-h-[500px] overflow-y-auto">
+                                {JSON.stringify(item, null, 2)}
+                              </pre>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
+                          <SyntaxHighlightedText 
+                            text={typeof lastResult.data === 'string' 
+                              ? lastResult.data 
+                              : JSON.stringify(lastResult.data, null, 2)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -41,9 +41,10 @@ Button.displayName = 'Button';
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
->(({ className, ...props }, ref) => (
+>(({ className, spellCheck, ...props }, ref) => (
   <input
     ref={ref}
+    spellCheck={spellCheck}
     className={cn(
       'flex h-8 w-full rounded-md border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50',
       className

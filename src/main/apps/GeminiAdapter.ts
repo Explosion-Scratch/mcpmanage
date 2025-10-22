@@ -1,20 +1,22 @@
 import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { MCPServers } from '../../shared/types';
 import { AppAdapter } from './AppAdapter';
 import { FileService } from '../services/FileService';
 
-export class CursorAdapter implements AppAdapter {
-  name = 'Cursor';
-  icon = 'https://www.cursor.com/favicon.ico';
-  color = '#000000';
+export class GeminiAdapter implements AppAdapter {
+  name = 'Gemini CLI';
+  icon = 'https://www.gstatic.com/lamda/images/gemini_favicon_f069958c85030456e93de685481c559f160ea06b.png';
+  color = '#4285f4';
   
   getPath(): string {
-    return '~/Library/Application Support/Cursor/User/globalStorage/mcp.json';
+    return '~/.gemini/settings.json';
   }
   
   async configExists(): Promise<boolean> {
-    const appPath = '/Applications/Cursor.app';
-    return fs.existsSync(appPath);
+    const configPath = this.getPath().replace('~', os.homedir());
+    return fs.existsSync(configPath);
   }
   
   async getServers(): Promise<MCPServers> {
