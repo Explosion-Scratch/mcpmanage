@@ -7,7 +7,7 @@ import { FileService } from '../services/FileService';
 
 export class OpencodeAdapter implements AppAdapter {
   name = 'opencode CLI';
-  icon = 'https://opencode.ai/favicon.ico';
+  icon = 'https://github.com/sst/opencode/blob/dev/packages/identity/avatar-dark.png?raw=true';
   color = '#6366f1';
   
   getPath(): string {

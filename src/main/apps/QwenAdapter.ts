@@ -7,17 +7,16 @@ import { FileService } from '../services/FileService';
 
 export class QwenAdapter implements AppAdapter {
   name = 'Qwen Code CLI';
-  icon = 'https://qianwen.aliyun.com/favicon.ico';
+  icon = 'https://assets.alicdn.com/g/qwenweb/qwen-webui-fe/0.0.191/static/favicon.png';
   color = '#5f46e8';
   
   getPath(): string {
-    return '~/.config/qwen/config.json';
+    return '~/.qwen/settings.json';
   }
   
   async configExists(): Promise<boolean> {
     const configPath = this.getPath().replace('~', os.homedir());
-    const configDir = path.dirname(configPath);
-    return fs.existsSync(configDir);
+    return fs.existsSync(configPath);
   }
   
   async getServers(): Promise<MCPServers> {
