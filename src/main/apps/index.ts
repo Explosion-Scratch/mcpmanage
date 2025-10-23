@@ -7,6 +7,8 @@ import { WindsurfAdapter } from './WindsurfAdapter';
 import { GeminiAdapter } from './GeminiAdapter';
 import { QwenAdapter } from './QwenAdapter';
 import { OpencodeAdapter } from './OpencodeAdapter';
+import { KiloCodeAdapter } from './KiloCodeAdapter';
+import { ClineAdapter } from './ClineAdapter';
 
 export const APP_ADAPTERS: AppAdapter[] = [
   new ClaudeAdapter(),
@@ -17,6 +19,8 @@ export const APP_ADAPTERS: AppAdapter[] = [
   new GeminiAdapter(),
   new QwenAdapter(),
   new OpencodeAdapter(),
+  new KiloCodeAdapter(),
+  new ClineAdapter(),
 ];
 
 export async function getAvailableAdapters(): Promise<AppAdapter[]> {

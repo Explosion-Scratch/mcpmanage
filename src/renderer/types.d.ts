@@ -38,6 +38,7 @@ declare global {
       studioListTools: (serverId: string) => Promise<MCPTool[]>;
       studioCallTool: (serverId: string, toolName: string, args: Record<string, unknown>) => Promise<MCPToolResult>;
       studioIsServerRunning: (serverId: string) => Promise<boolean>;
+      onStudioLog: (callback: (serverId: string, message: string) => void) => () => void;
     };
   }
 }

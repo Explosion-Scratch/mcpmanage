@@ -136,19 +136,6 @@ export class MasterServerStore {
         };
         this.servers.set(id, newServer);
         await this.save();
-      } else {
-        const existingApps = Array.isArray(existing.apps) ? existing.apps : [];
-        const mergedApps = Array.from(new Set([...existingApps, ...serverData.apps]));
-        if (mergedApps.length !== existingApps.length || 
-            JSON.stringify(mergedApps.sort()) !== JSON.stringify(existingApps.sort())) {
-          const updated: MasterMCPServer = {
-            ...existing,
-            apps: mergedApps,
-            updatedAt: Date.now()
-          };
-          this.servers.set(id, updated);
-          await this.save();
-        }
       }
     }
   }

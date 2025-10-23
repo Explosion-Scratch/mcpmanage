@@ -2,15 +2,28 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { CallToolResult, Tool } from '@modelcontextprotocol/sdk/types.js';
 import { MasterMCPServer } from '../../shared/types';
+import { BrowserWindow } from 'electron';
 
 interface ActiveConnection {
   client: Client;
   transport: StdioClientTransport;
   server: MasterMCPServer;
+  onStdout?: (data: string) => void;
 }
 
 export class MCPStudioService {
   private connections: Map<string, ActiveConnection> = new Map();
+  private mainWindow: BrowserWindow | null = null;
+
+  setMainWindow(window: BrowserWindow) {
+    this.mainWindow = window;
+  }
+
+  private sendLog(serverId: string, message: string) {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send('studio:log', serverId, message);
+    }
+  }
 
   async startServer(server: MasterMCPServer): Promise<{ success: boolean; error?: string }> {
     try {
@@ -30,6 +43,49 @@ export class MCPStudioService {
         args: server.args,
         env: server.env,
       });
+
+      const attachProcessListeners = () => {
+        const process = (transport as any)._process;
+        if (!process) {
+          setTimeout(attachProcessListeners, 50);
+          return;
+        }
+
+        if (process.stderr) {
+          process.stderr.on('data', (data: Buffer) => {
+            const message = data.toString();
+            if (message) {
+              const lines = message.split('\n').filter(line => line.trim());
+              lines.forEach(line => this.sendLog(server.id, line));
+            }
+          });
+        }
+
+        if (process.stdout) {
+          const stdoutBuffer: string[] = [];
+          process.stdout.on('data', (data: Buffer) => {
+            const message = data.toString();
+            stdoutBuffer.push(message);
+            
+            const combined = stdoutBuffer.join('');
+            const lines = combined.split('\n');
+            
+            stdoutBuffer.length = 0;
+            if (lines[lines.length - 1] !== '') {
+              stdoutBuffer.push(lines.pop()!);
+            }
+            
+            lines.forEach(line => {
+              const trimmed = line.trim();
+              if (trimmed && !trimmed.startsWith('{"jsonrpc"') && !trimmed.startsWith('Content-Length:')) {
+                this.sendLog(server.id, line);
+              }
+            });
+          });
+        }
+      };
+
+      attachProcessListeners();
 
       await client.connect(transport);
 

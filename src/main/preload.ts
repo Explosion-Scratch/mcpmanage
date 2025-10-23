@@ -22,5 +22,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   studioCallTool: (serverId: string, toolName: string, args: Record<string, unknown>) =>
     ipcRenderer.invoke('studio:call-tool', serverId, toolName, args),
   studioIsServerRunning: (serverId: string) => ipcRenderer.invoke('studio:is-server-running', serverId),
+  onStudioLog: (callback: (serverId: string, message: string) => void) => {
+    const subscription = (_event: any, serverId: string, message: string) => callback(serverId, message);
+    ipcRenderer.on('studio:log', subscription);
+    return () => ipcRenderer.removeListener('studio:log', subscription);
+  },
 });
 

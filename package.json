@@ -6,8 +6,8 @@
     "dev": "concurrently -k \"bun run build:electron:watch\" \"bun run dev:vite\" \"bun run dev:electron\"",
     "build:electron": "bun run build:main && bun run build:preload",
     "build:electron:watch": "concurrently -k \"bun run build:main:watch\" \"bun run build:preload:watch\"",
-    "build:main": "esbuild src/main/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron",
-    "build:main:watch": "esbuild src/main/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron --watch",
+    "build:main": "esbuild src/main/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron --external:electron-liquid-glass",
+    "build:main:watch": "esbuild src/main/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron --external:electron-liquid-glass --watch",
     "build:preload": "esbuild src/main/preload.ts --bundle --platform=node --outfile=dist/preload.js --external:electron",
     "build:preload:watch": "esbuild src/main/preload.ts --bundle --platform=node --outfile=dist/preload.js --external:electron --watch",
     "build:renderer": "vite build",
@@ -19,6 +19,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.1",
     "electron": "^28.0.0",
+    "electron-liquid-glass": "^1.1.1",
     "highlight.js": "^11.11.1"
   },
   "devDependencies": {

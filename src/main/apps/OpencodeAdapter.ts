@@ -52,10 +52,6 @@ export class OpencodeAdapter implements AppAdapter {
       };
     }
     
-    if (!data.mcp) {
-      data.mcp = {};
-    }
-    
     const newMcp: Record<string, any> = {};
     
     for (const [name, config] of Object.entries(servers)) {
@@ -69,10 +65,7 @@ export class OpencodeAdapter implements AppAdapter {
       }
     }
     
-    data.mcp = {
-      ...data.mcp,
-      ...newMcp
-    };
+    data.mcp = newMcp;
     
     return await FileService.writeJSON(this.getPath(), data);
   }

@@ -51,7 +51,7 @@ function SyntaxHighlightedText({ text }: { text: string }) {
   }, [text]);
 
   return (
-    <pre className="text-sm whitespace-pre-wrap font-mono max-h-[500px] overflow-y-auto bg-gray-50 text-gray-900 p-3 rounded-md">
+    <pre className="text-sm whitespace-pre-wrap font-mono max-h-[500px] overflow-y-auto bg-white/70 backdrop-blur-sm text-gray-900 p-3 rounded-md border border-gray-200/50">
       <code dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
     </pre>
   );
@@ -98,7 +98,7 @@ export default function MCPManager() {
     const appsData = await window.electronAPI.getApps();
     const serversData = await window.electronAPI.getAllServers();
     
-    setApps(Array.isArray(appsData) ? appsData.map(a => ({ ...a, enabled: true })) : []);
+    setApps(Array.isArray(appsData) ? appsData : []);
     
     const serversWithMeta: MCPServerWithMetadata[] = Array.isArray(serversData) 
       ? serversData.map(server => ({
@@ -167,12 +167,14 @@ export default function MCPManager() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-white text-gray-900 font-sans overflow-hidden selection:bg-[#cce5ff]">
-      <div className="w-[220px] shrink-0 bg-gray-50/80 border-r border-gray-200/50 backdrop-blur-xl flex flex-col py-4 z-10">
-        <div
-          className="h-6 w-full flex items-center px-4 mb-6"
-          style={{ WebkitAppRegion: 'drag' } as any}
-        />
+    <div className="flex h-screen w-full bg-transparent text-gray-900 font-sans overflow-hidden selection:bg-[#cce5ff]">
+      <div
+        className="absolute top-0 left-0 right-0 h-3 z-50"
+        style={{ WebkitAppRegion: 'drag' } as any}
+      />
+      
+      <div className="w-[220px] shrink-0 bg-white/40 border-r border-gray-200/30 backdrop-blur-3xl flex flex-col py-4 z-10 relative">
+        <div className="h-10 w-full flex items-center px-4 mb-4" />
 
         <div className="px-4 mb-4">
           <h1 className="font-semibold text-sm flex items-center gap-2">
@@ -208,12 +210,6 @@ export default function MCPManager() {
             onClick={() => setActiveTab('explore')}
             shortcut="⌘3"
           />
-
-          <div className="pt-6 pb-2 px-2">
-            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
-              Development
-            </p>
-          </div>
           <SidebarItem
             icon={Beaker}
             label="Studio"
@@ -229,7 +225,7 @@ export default function MCPManager() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-white relative">
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-white/50 relative">
         {activeTab === 'servers' && !selectedServerId && (
           <ManageServersView
             servers={servers}
@@ -248,6 +244,7 @@ export default function MCPManager() {
             onBack={() => setSelectedServerId(null)}
             onUpdate={handleUpdateServer}
             onToggle={toggleServerEnabled}
+            onDelete={handleDeleteServer}
           />
         )}
         {activeTab === 'apps' && <ManageAppsView apps={apps} onRefresh={loadData} />}
@@ -277,8 +274,8 @@ function SidebarItem({
       className={cn(
         'w-full flex items-center gap-2 px-2 py-1.5 text-[13px] font-medium rounded-md transition-all duration-150 group',
         active
-          ? 'bg-gray-200/60 text-gray-900 shadow-sm'
-          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+          ? 'bg-gray-900/10 text-gray-900 shadow-sm'
+          : 'text-gray-500 hover:bg-gray-900/5 hover:text-gray-900'
       )}
     >
       <Icon
@@ -329,7 +326,21 @@ function ManageServersView({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey) {
+      if (isAdding) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setIsAdding(false);
+          setNewName('');
+          setNewCmd('');
+          setNewIcon('');
+          setNewDesc('');
+        } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault();
+          if (newCmd && newName) {
+            handleAddSubmit(e as any);
+          }
+        }
+      } else if (e.metaKey || e.ctrlKey) {
         if (e.key === 'n') {
           e.preventDefault();
           setIsAdding(!isAdding);
@@ -342,7 +353,7 @@ function ManageServersView({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAdding, isImporting]);
+  }, [isAdding, isImporting, newCmd, newName]);
 
   useEffect(() => {
     if (!newName && newCmd.includes('@modelcontextprotocol/server-')) {
@@ -406,9 +417,109 @@ function ManageServersView({
     }
   };
 
+  if (isAdding) {
+    return (
+      <div className="flex flex-col h-full animate-in fade-in duration-300 relative">
+        <div className="absolute inset-0 bg-transparent" />
+        <div className="relative z-10 flex flex-col items-center justify-center h-full p-8">
+          <form
+            onSubmit={handleAddSubmit}
+            className="w-full max-w-2xl bg-white/80 rounded-2xl shadow-2xl border border-gray-200/50 p-8 space-y-6 animate-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Add New Server</h2>
+                <p className="text-sm text-gray-500 mt-1">Install and configure a new MCP server</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAdding(false);
+                  setNewName('');
+                  setNewCmd('');
+                  setNewIcon('');
+                  setNewDesc('');
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label>Installation Command *</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <TerminalSquare className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <Input
+                    required
+                    className="pl-9 font-mono text-xs"
+                    placeholder="npx -y @modelcontextprotocol/server-name ..."
+                    value={newCmd}
+                    onChange={e => setNewCmd(e.target.value)}
+                    spellCheck={false}
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Name *</Label>
+                  <Input
+                    required
+                    placeholder="e.g. Filesystem"
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Icon URL (Optional)</Label>
+                  <Input
+                    placeholder="https://..."
+                    value={newIcon}
+                    onChange={e => setNewIcon(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Description (Optional)</Label>
+                <Input
+                  placeholder="Short description of what this server provides"
+                  value={newDesc}
+                  onChange={e => setNewDesc(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-gray-200/50">
+              <div className="text-xs text-gray-500 flex items-center gap-4">
+                <span className="flex items-center gap-1.5">
+                  <kbd className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">esc</kbd>
+                  to cancel
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <kbd className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">⌘⏎</kbd>
+                  to install
+                </span>
+              </div>
+              <Button type="submit" variant="primary" size="sm" className="gap-2">
+                <Plus className="w-3.5 h-3.5" />
+                Install & Add Server
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-300">
-      <header className="h-14 shrink-0 px-6 flex items-center justify-between border-b border-gray-100">
+      <header className="h-14 shrink-0 px-6 flex items-center justify-between border-b border-gray-200/30 bg-white/40 backdrop-blur-xl">
         <div>
           <h2 className="text-sm font-semibold text-gray-900">Configured Servers</h2>
           <p className="text-xs text-gray-500">
@@ -426,20 +537,20 @@ function ManageServersView({
             <span className="text-[10px] font-mono text-gray-400">⌘I</span>
           </Button>
           <Button
-            variant={isAdding ? 'secondary' : 'primary'}
+            variant="primary"
             size="sm"
             className="gap-2"
-            onClick={() => setIsAdding(!isAdding)}
+            onClick={() => setIsAdding(true)}
           >
-            {isAdding ? <XCircle className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-            {isAdding ? 'Cancel' : 'Add Server'}
-            {!isAdding && <span className="text-[10px] font-mono opacity-70">⌘N</span>}
+            <Plus className="w-3.5 h-3.5" />
+            Add Server
+            <span className="text-[10px] font-mono opacity-70">⌘N</span>
           </Button>
         </div>
       </header>
 
       {isImporting && (
-        <div className="border-b border-gray-100 bg-gray-50/80 p-6 animate-in slide-in-from-top-2 duration-200">
+        <div className="border-b border-gray-200/30 bg-white/60 backdrop-blur-xl p-6 animate-in slide-in-from-top-2 duration-200">
           <h3 className="text-sm font-medium mb-2">Import from JSON</h3>
           <p className="text-xs text-gray-500 mb-3">
             Paste a standard `mcpServers` configuration object.
@@ -469,64 +580,10 @@ function ManageServersView({
         </div>
       )}
 
-      {isAdding && (
-        <form
-          onSubmit={handleAddSubmit}
-          className="border-b border-gray-100 bg-gray-50/80 p-6 animate-in slide-in-from-top-2 duration-200 grid grid-cols-2 gap-4"
-        >
-          <div className="col-span-2">
-            <Label>Installation Command *</Label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <TerminalSquare className="w-4 h-4 text-gray-400" />
-              </div>
-              <Input
-                required
-                className="pl-9 font-mono text-xs"
-                placeholder="npx -y @modelcontextprotocol/server-name ..."
-                value={newCmd}
-                onChange={e => setNewCmd(e.target.value)}
-                spellCheck={false}
-              />
-            </div>
-          </div>
-          <div>
-            <Label>Name *</Label>
-            <Input
-              required
-              placeholder="e.g. Filesystem"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Icon URL (Optional)</Label>
-            <Input
-              placeholder="https://..."
-              value={newIcon}
-              onChange={e => setNewIcon(e.target.value)}
-            />
-          </div>
-          <div className="col-span-2">
-            <Label>Description (Optional)</Label>
-            <Input
-              placeholder="Short description of what this server provides"
-              value={newDesc}
-              onChange={e => setNewDesc(e.target.value)}
-            />
-          </div>
-          <div className="col-span-2 flex justify-end pt-2">
-            <Button type="submit" variant="primary" size="sm">
-              Install & Add Server
-            </Button>
-          </div>
-        </form>
-      )}
-
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-gray-200/50 bg-white/70 backdrop-blur-xl shadow-sm overflow-hidden">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50/80 border-b border-gray-200 text-xs uppercase tracking-wider font-medium text-gray-500">
+            <thead className="bg-white/50 backdrop-blur-sm border-b border-gray-200/50 text-xs uppercase tracking-wider font-medium text-gray-500">
               <tr>
                 <th className="px-4 py-3 w-12 text-center">On</th>
                 <th className="px-4 py-3">Server</th>
@@ -535,9 +592,9 @@ function ManageServersView({
                 <th className="px-4 py-3 w-16"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100/50">
               {servers.map(server => (
-                <tr key={server.id} className="group hover:bg-gray-50/50 transition-colors">
+                <tr key={server.id} className="group hover:bg-white/50 transition-colors">
                   <td className="px-4 py-3 text-center">
                     <Switch checked={server.enabled} onChange={() => onToggle(server.id)} />
                   </td>
@@ -607,12 +664,14 @@ function ServerDetailView({
   onBack,
   onUpdate,
   onToggle,
+  onDelete,
 }: {
   server: MCPServerWithMetadata;
   apps: AppConfig[];
   onBack: () => void;
   onUpdate: (s: MCPServerWithMetadata) => void;
   onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(server.name);
@@ -658,8 +717,8 @@ function ServerDetailView({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50/50 animate-in slide-in-from-right-4 duration-300">
-      <header className="h-14 shrink-0 px-4 flex items-center gap-2 border-b border-gray-200 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+    <div className="flex flex-col h-full bg-white/20 backdrop-blur-xl animate-in slide-in-from-right-4 duration-300">
+      <header className="h-14 shrink-0 px-4 flex items-center gap-2 border-b border-gray-200/30 bg-white/50 backdrop-blur-xl sticky top-0 z-10">
         <Button
           variant="ghost"
           size="sm"
@@ -680,7 +739,7 @@ function ServerDetailView({
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto p-8 space-y-8">
-          <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex gap-6 items-start">
+          <section className="bg-white/70 backdrop-blur-xl rounded-xl shadow-sm border border-gray-200/50 p-6 flex gap-6 items-start">
             <div className="w-20 h-20 rounded-[18px] bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
               <ServerIcon url={isEditing ? editedIconUrl : server.iconUrl} className="w-10 h-10" />
             </div>
@@ -690,6 +749,19 @@ function ServerDetailView({
                   <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-semibold text-gray-900">{server.name}</h1>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="danger"
+                        size="icon"
+                        className="hover:bg-red-200"
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to delete "${server.name}"? This action cannot be undone.`)) {
+                            onDelete(server.id);
+                          }
+                        }}
+                        title="Delete server"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                       <Switch
                         checked={server.enabled}
                         onChange={() => onToggle(server.id)}
@@ -749,9 +821,9 @@ function ServerDetailView({
               <div>
                 <Label>Command</Label>
                 {!isEditing ? (
-                  <div className="font-mono text-xs bg-gray-900 text-gray-200 p-3 rounded-md overflow-x-auto flex items-center">
-                    <span className="text-gray-500 mr-2">$</span>
-                    <span className="text-blue-400">{server.command}</span>
+                  <div className="font-mono text-xs bg-white/70 backdrop-blur-sm text-gray-900 p-3 rounded-md overflow-x-auto flex items-center border border-gray-200/50">
+                    <span className="text-gray-400 mr-2">$</span>
+                    <span className="text-blue-600">{server.command}</span>
                     <span className="ml-2">{(server.args || []).join(' ')}</span>
                   </div>
                 ) : (
@@ -774,8 +846,8 @@ function ServerDetailView({
                   <ShieldAlert className="w-4 h-4 text-gray-500" />
                   Permissions
                 </h3>
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-100 group">
+                <div className="bg-white/70 backdrop-blur-xl rounded-lg border border-gray-200/50 overflow-hidden">
+                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/40 transition-colors border-b border-gray-100/50 group">
                     <div>
                       <div className="font-medium text-sm text-gray-900">Always Ask</div>
                       <div className="text-xs text-gray-500">
@@ -793,7 +865,7 @@ function ServerDetailView({
                       <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-white transition-all peer-checked:border-gray-900 peer-checked:border-[6px] group-hover:border-gray-400 peer-checked:group-hover:border-gray-900" />
                     </div>
                   </label>
-                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors group">
+                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/40 transition-colors group">
                     <div>
                       <div className="font-medium text-sm text-gray-900">Allow without asking</div>
                       <div className="text-xs text-gray-500">
@@ -820,15 +892,15 @@ function ServerDetailView({
                 <AppWindow className="w-4 h-4 text-gray-500" />
                 Application Sync
               </h3>
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="bg-white/70 backdrop-blur-xl rounded-lg border border-gray-200/50 overflow-hidden">
                 {(apps || []).map(app => {
                   const isIncluded = (server.apps || []).includes(app.name);
                   return (
                     <div
                       key={app.name}
                       className={cn(
-                        'flex items-center gap-3 p-3 border-b border-gray-100 last:border-0 transition-colors cursor-pointer',
-                        isIncluded ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/50'
+                        'flex items-center gap-3 p-3 border-b border-gray-100/50 last:border-0 transition-colors cursor-pointer',
+                        isIncluded ? 'bg-white/50 hover:bg-white/70' : 'bg-white/20'
                       )}
                       onClick={() => toggleAppInclusion(app.name)}
                     >
@@ -877,8 +949,8 @@ function ManageAppsView({ apps, onRefresh }: { apps: AppConfig[]; onRefresh: () 
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50/30 animate-in fade-in duration-300">
-      <header className="h-14 shrink-0 px-6 flex items-center justify-between border-b border-gray-100 bg-white">
+    <div className="flex flex-col h-full bg-white/20 backdrop-blur-xl animate-in fade-in duration-300">
+      <header className="h-14 shrink-0 px-6 flex items-center justify-between border-b border-gray-200/30 bg-white/40 backdrop-blur-xl">
         <div>
           <h2 className="text-sm font-semibold text-gray-900">
             Target Applications ({(apps || []).length})
@@ -900,7 +972,7 @@ function ManageAppsView({ apps, onRefresh }: { apps: AppConfig[]; onRefresh: () 
         {(apps || []).map(app => (
           <div
             key={app.name}
-            className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex gap-4 hover:shadow-md transition-all"
+            className="bg-white/70 backdrop-blur-xl rounded-xl border border-gray-200/50 p-5 shadow-sm flex gap-4 hover:shadow-md transition-all"
           >
             <div className="relative">
               <div className="w-16 h-16 rounded-[16px] border border-gray-200/50 flex items-center justify-center overflow-hidden bg-white shadow-sm">
@@ -913,9 +985,7 @@ function ManageAppsView({ apps, onRefresh }: { apps: AppConfig[]; onRefresh: () 
                   }
                 />
               </div>
-              {app.enabled && (
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-[3px] border-white rounded-full" />
-              )}
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-[3px] border-white rounded-full" />
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <div className="flex items-center justify-between">
@@ -971,6 +1041,16 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [activeTab, setActiveTab] = useState<StudioTab>('console');
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onStudioLog((serverId: string, message: string) => {
+      if (serverId === selectedServer) {
+        setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [selectedServer]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1202,8 +1282,8 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
   const currentServer = servers.find(s => s.id === selectedServer);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 animate-in fade-in duration-300">
-      <header className="h-14 shrink-0 px-4 flex items-center gap-4 border-b border-gray-200 bg-white">
+    <div className="flex flex-col h-full bg-white/20 backdrop-blur-xl animate-in fade-in duration-300">
+      <header className="h-14 shrink-0 px-4 flex items-center gap-4 border-b border-gray-200/30 bg-white/40 backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-500">Server:</span>
           <div className="relative">
@@ -1214,14 +1294,14 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                 const newServerId = e.target.value;
                 if (isRunning) {
                   await window.electronAPI.studioStopServer(selectedServer);
+                  setIsRunning(false);
+                  setTools([]);
+                  setSelectedTool(null);
+                  addLog(`[${new Date().toLocaleTimeString()}] Server stopped.`);
                 }
                 setSelectedServer(newServerId);
-                setIsRunning(false);
                 setLogs([]);
-                setTools([]);
-                setSelectedTool(null);
               }}
-              disabled={isRunning}
             >
               {servers.map(s => (
                 <option key={s.id} value={s.id}>
@@ -1273,8 +1353,8 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-          <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+        <div className="w-64 bg-white/50 backdrop-blur-xl border-r border-gray-200/30 flex flex-col">
+          <div className="px-4 py-3 border-b border-gray-200/30 flex justify-between items-center">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Available Tools
             </h3>
@@ -1282,7 +1362,7 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
           </div>
           <div className="flex-1 overflow-y-auto py-2">
             {!isRunning && (
-              <div className="px-4 py-8 text-center text-sm text-gray-400 italic">
+              <div className="px-4 py-8 text-center text-sm text-gray-500 italic">
                 Start server to load tools
               </div>
             )}
@@ -1293,8 +1373,8 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                 className={cn(
                   'w-full text-left px-4 py-2 text-sm flex items-center gap-2 border-l-[3px] transition-colors',
                   selectedTool?.name === tool.name
-                    ? 'bg-blue-50 border-blue-500 text-blue-900'
-                    : 'border-transparent hover:bg-gray-50 text-gray-700'
+                    ? 'bg-blue-500/10 border-blue-500 text-blue-900'
+                    : 'border-transparent hover:bg-white/40 text-gray-700'
                 )}
               >
                 <TerminalSquare className="w-4 h-4 opacity-70" />
@@ -1304,8 +1384,8 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col bg-white overflow-hidden">
-          <div className="border-b border-gray-200 px-4 flex items-center justify-between">
+        <div className="flex-1 flex flex-col bg-white/60 backdrop-blur-xl overflow-hidden">
+          <div className="border-b border-gray-200/30 px-4 flex items-center justify-between">
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setActiveTab('console')}
@@ -1386,16 +1466,16 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
 
           <div className="flex-1 overflow-hidden">
             {activeTab === 'console' && (
-              <div className="h-full flex flex-col bg-gray-900 text-gray-100 overflow-hidden">
+              <div className="h-full flex flex-col bg-white text-gray-900 overflow-hidden">
                 <div className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1">
                   {logs.length === 0 && (
-                    <div className="text-gray-500 italic text-center py-8">
+                    <div className="text-gray-400 italic text-center py-8">
                       No console output yet...
                     </div>
                   )}
                   {logs.map((log, i) => (
                     <div key={i} className="break-all leading-relaxed">
-                      <span className="text-gray-500 mr-2">{'>'}</span>
+                      <span className="text-gray-400 mr-2">{'>'}</span>
                       {log}
                     </div>
                   ))}
@@ -1441,8 +1521,8 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                     <div className={cn(
                       'rounded-lg border p-3 flex items-center gap-2',
                       lastResult.error 
-                        ? 'bg-red-50 border-red-200' 
-                        : 'bg-green-50 border-green-200'
+                        ? 'bg-red-50/70 backdrop-blur-sm border-red-200/50' 
+                        : 'bg-green-50/70 backdrop-blur-sm border-green-200/50'
                     )}>
                       {lastResult.error ? (
                         <>
@@ -1459,7 +1539,7 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                     <div className="space-y-3">
                       {Array.isArray(lastResult.data) ? (
                         lastResult.data.map((item: any, idx: number) => (
-                          <div key={idx} className="bg-white rounded-md p-3 border border-gray-200">
+                          <div key={idx} className="bg-white/70 backdrop-blur-sm rounded-md p-3 border border-gray-200/50">
                             {item.type === 'text' && (
                               <div>
                                 <div className="text-xs font-medium text-gray-500 mb-2">Text Content</div>
@@ -1495,7 +1575,7 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                           </div>
                         ))
                       ) : (
-                        <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
+                        <div className="bg-white/70 backdrop-blur-sm rounded-md border border-gray-200/50 overflow-hidden">
                           <SyntaxHighlightedText 
                             text={typeof lastResult.data === 'string' 
                               ? lastResult.data 

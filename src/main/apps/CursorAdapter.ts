@@ -30,13 +30,7 @@ export class CursorAdapter implements AppAdapter {
     if (!data) {
       data = {};
     }
-    if (!data.mcpServers) {
-      data.mcpServers = {};
-    }
-    data.mcpServers = {
-      ...data.mcpServers,
-      ...servers
-    };
+    data.mcpServers = servers;
     return await FileService.writeJSON(this.getPath(), data);
   }
 }

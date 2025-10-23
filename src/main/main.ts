@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
+import liquidGlass from 'electron-liquid-glass';
 import { MCPConfigManager } from './services/MCPConfigManager';
 import { MasterServerStore } from './services/MasterServerStore';
 import { MCPStudioService } from './services/MCPStudioService';
@@ -16,12 +17,17 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    transparent: true,
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 12, y: 12 },
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
+
+  mainWindow.setWindowButtonVisibility(true);
 
   const isDev = !app.isPackaged;
   
@@ -31,6 +37,15 @@ function createWindow() {
   } else {
     mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   }
+
+  mainWindow.webContents.once('did-finish-load', () => {
+    if (mainWindow && process.platform === 'darwin') {
+      const glassId = liquidGlass.addView(mainWindow.getNativeWindowHandle(), {
+        cornerRadius: 12,
+        opaque: false,
+      });
+    }
+  });
 }
 
 app.whenReady().then(async () => {
@@ -44,6 +59,10 @@ app.whenReady().then(async () => {
   
   setupIPCHandlers();
   createWindow();
+  
+  if (mainWindow) {
+    mcpStudioService.setMainWindow(mainWindow);
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
