@@ -19,6 +19,7 @@ export interface AppConfig {
   name: string;
   icon: string;
   color: string;
+  syncEnabled?: boolean;
 }
 
 export interface ParsedCommand {

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
-import { Box } from 'lucide-react';
+import { Box, Search, X } from 'lucide-react';
+import { Icon as IconifyIcon } from '@iconify/react';
 
 export const Button = React.forwardRef<
   HTMLButtonElement,
@@ -121,16 +122,183 @@ export const ServerIcon = ({
   url?: string;
   className?: string;
 }) => {
+  // Check if it's an iconify icon name (e.g., 'ph:gear')
+  if (url && url.includes(':')) {
+    return <IconifyIcon icon={url} className={cn('w-5 h-5 opacity-40', className)} />;
+  }
+  
+  // Otherwise treat it as a URL
   if (url) {
     return (
       <img
         src={url}
         alt=""
-        className={cn('w-5 h-5 object-contain', className)}
+        className={cn('w-5 h-5 object-contain opacity-40', className)}
         onError={(e) => (e.currentTarget.style.display = 'none')}
       />
     );
   }
-  return <Box className={cn('w-5 h-5 text-gray-400', className)} />;
+  return <Box className={cn('w-5 h-5 text-gray-400 opacity-40', className)} />;
+};
+
+interface IconPickerProps {
+  value?: string;
+  onChange: (icon: string) => void;
+  onClose: () => void;
+  anchorEl?: HTMLElement | null;
+}
+
+export const IconPicker = ({ value, onChange, onClose, anchorEl }: IconPickerProps) => {
+  const [search, setSearch] = useState('');
+  const [selectedIcon, setSelectedIcon] = useState(value ? value.replace('ph:', '') : '');
+  const [iconMetadata, setIconMetadata] = useState<Record<string, any>>({});
+  const [allIcons, setAllIcons] = useState<string[]>([]);
+  
+  const notRegular = (iconName: string) => {
+    const irregularPatterns = ['-fill', '-duotone', '-bold', '-thin', '-light', '-regular'];
+    return irregularPatterns.some(pattern => iconName.endsWith(pattern));
+  }
+  useEffect(() => {
+    // Load icon metadata from the package
+    import('@iconify-json/ph/icons.json').then((data: any) => {
+      const icons = Object.keys(data.icons || {}).filter(iconName => !notRegular(iconName));
+      setAllIcons(icons);
+      
+      // Import metadata if available
+      import('@iconify-json/ph/metadata.json')
+        .then((metadata: any) => {
+          setIconMetadata(metadata);
+        })
+        .catch(() => {
+          // Metadata not available, just use icon names
+          setIconMetadata({});
+        });
+    });
+  }, []);
+  
+  const filteredIcons = search
+    ? allIcons.filter(icon => {
+        const lowerSearch = search.toLowerCase();
+        // Search by icon name
+        if (icon.toLowerCase().includes(lowerSearch)) return true;
+        
+        // Search by metadata if available
+        const meta = iconMetadata[icon];
+        if (meta) {
+          // Check categories
+          if (meta.categories && Array.isArray(meta.categories)) {
+            if (meta.categories.some((cat: string) => cat.toLowerCase().includes(lowerSearch))) {
+              return true;
+            }
+          }
+          // Check tags
+          if (meta.tags && Array.isArray(meta.tags)) {
+            if (meta.tags.some((tag: string) => tag.toLowerCase().includes(lowerSearch))) {
+              return true;
+            }
+          }
+        }
+        return false;
+      })
+    : allIcons.slice(0, 100); // Show first 100 icons by default
+
+  const handleSave = () => {
+    if (selectedIcon) {
+      onChange(`ph:${selectedIcon}`);
+      onClose();
+    }
+  };
+
+  // Calculate position based on anchor element
+  const pickerStyle: React.CSSProperties = anchorEl
+    ? {
+        position: 'fixed',
+        top: anchorEl.getBoundingClientRect().bottom + 8,
+        left: anchorEl.getBoundingClientRect().left,
+      }
+    : {};
+
+  return (
+    <>
+      <div 
+        className="fixed inset-0 z-40" 
+        onClick={onClose}
+      />
+      <div 
+        className="fixed z-50 bg-white rounded-lg shadow-2xl border border-gray-200 w-80 max-h-96 flex flex-col"
+        style={pickerStyle}
+      >
+        <div className="p-3 border-b border-gray-200">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search icons..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900/10"
+              autoFocus
+            />
+          </div>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-2">
+          <div className="grid grid-cols-8 gap-1">
+            {filteredIcons.map((icon) => {
+              const iconName = `ph:${icon}`;
+              const isSelected = selectedIcon === icon;
+              return (
+                <button
+                  key={icon}
+                  onClick={() => setSelectedIcon(icon)}
+                  className={cn(
+                    'aspect-square rounded border transition-all flex items-center justify-center hover:bg-gray-50',
+                    isSelected
+                      ? 'border-gray-900 bg-gray-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  )}
+                  title={icon}
+                >
+                  <IconifyIcon icon={iconName} className="w-4 h-4 text-gray-700 opacity-80" />
+                </button>
+              );
+            })}
+          </div>
+          {filteredIcons.length === 0 && (
+            <div className="text-center py-8 text-xs text-gray-400">
+              <p>No icons found</p>
+            </div>
+          )}
+        </div>
+        
+        <div className="p-2 border-t border-gray-200 flex items-center justify-between">
+          <div className="text-xs text-gray-500">
+            {selectedIcon ? (
+              <div className="flex items-center gap-1.5">
+                <IconifyIcon icon={`ph:${selectedIcon}-light`} className="w-3.5 h-3.5 opacity-40" />
+                <span className="font-mono text-[10px]">{selectedIcon}</span>
+              </div>
+            ) : (
+              <span className="text-[10px]">Select an icon</span>
+            )}
+          </div>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-6 px-2 text-xs">
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSave}
+              disabled={!selectedIcon}
+              className="h-6 px-2 text-xs"
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 };
 

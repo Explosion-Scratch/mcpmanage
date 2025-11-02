@@ -55,9 +55,6 @@ bun run build
 - See file paths and connection status
 - Apps with custom syntax mappings are marked
 
-### Explore Servers
-- Browse community MCP servers (coming soon)
-
 ### Studio
 - Start/stop MCP servers
 - View available tools

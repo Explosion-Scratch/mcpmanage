@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Server,
   AppWindow,
-  Compass,
   Beaker,
   Plus,
   Play,
@@ -25,13 +24,13 @@ import json from 'highlight.js/lib/languages/json';
 import markdown from 'highlight.js/lib/languages/markdown';
 import 'highlight.js/styles/github.css';
 import { cn } from './lib/utils';
-import { Button, Input, Label, Switch, Badge, ServerIcon } from './components/ui';
+import { Button, Input, Label, Switch, Badge, ServerIcon, IconPicker } from './components/ui';
 import type { AppConfig, MCPServerWithMetadata, PermissionLevel } from '../../shared/types';
 
 hljs.registerLanguage('json', json);
 hljs.registerLanguage('markdown', markdown);
 
-type Tab = 'servers' | 'apps' | 'explore' | 'studio';
+type Tab = 'servers' | 'apps' | 'studio';
 
 function SyntaxHighlightedText({ text }: { text: string }) {
   const [highlightedHtml, setHighlightedHtml] = useState('');
@@ -78,9 +77,6 @@ export default function MCPManager() {
           e.preventDefault();
           setActiveTab('apps');
         } else if (e.key === '3') {
-          e.preventDefault();
-          setActiveTab('explore');
-        } else if (e.key === '4') {
           e.preventDefault();
           setActiveTab('studio');
         }
@@ -204,18 +200,11 @@ export default function MCPManager() {
             shortcut="⌘2"
           />
           <SidebarItem
-            icon={Compass}
-            label="Explore servers"
-            active={activeTab === 'explore'}
-            onClick={() => setActiveTab('explore')}
-            shortcut="⌘3"
-          />
-          <SidebarItem
             icon={Beaker}
             label="Studio"
             active={activeTab === 'studio'}
             onClick={() => setActiveTab('studio')}
-            shortcut="⌘4"
+            shortcut="⌘3"
           />
         </nav>
 
@@ -248,7 +237,6 @@ export default function MCPManager() {
           />
         )}
         {activeTab === 'apps' && <ManageAppsView apps={apps} onRefresh={loadData} />}
-        {activeTab === 'explore' && <ExploreView />}
         {activeTab === 'studio' && <StudioView servers={servers.filter(s => s.enabled)} />}
       </div>
     </div>
@@ -323,6 +311,8 @@ function ManageServersView({
   const [newIcon, setNewIcon] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [jsonImport, setJsonImport] = useState('');
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const iconButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -476,12 +466,18 @@ function ManageServersView({
                   />
                 </div>
                 <div>
-                  <Label>Icon URL (Optional)</Label>
-                  <Input
-                    placeholder="https://..."
-                    value={newIcon}
-                    onChange={e => setNewIcon(e.target.value)}
-                  />
+                  <Label>Icon</Label>
+                  <button
+                    ref={iconButtonRef}
+                    type="button"
+                    onClick={() => setShowIconPicker(true)}
+                    className="w-full h-8 px-3 text-sm border border-gray-200 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  >
+                    <ServerIcon url={newIcon} className="w-4 h-4" />
+                    <span className="text-gray-600 flex-1 text-left">
+                      {newIcon ? newIcon.replace('ph:', '').replace('-light', '') : 'Choose icon...'}
+                    </span>
+                  </button>
                 </div>
               </div>
 
@@ -501,18 +497,26 @@ function ManageServersView({
                   <kbd className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">esc</kbd>
                   to cancel
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <kbd className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">⌘⏎</kbd>
-                  to install
-                </span>
               </div>
               <Button type="submit" variant="primary" size="sm" className="gap-2">
                 <Plus className="w-3.5 h-3.5" />
-                Install & Add Server
+                Add server ⌘⏎
               </Button>
             </div>
           </form>
         </div>
+        
+        {showIconPicker && (
+          <IconPicker
+            value={newIcon}
+            onChange={(icon) => {
+              setNewIcon(icon);
+              setShowIconPicker(false);
+            }}
+            onClose={() => setShowIconPicker(false)}
+            anchorEl={iconButtonRef.current}
+          />
+        )}
       </div>
     );
   }
@@ -623,15 +627,32 @@ function ManageServersView({
                     <span className="text-blue-600">{server.command}</span> {(server.args || []).join(' ')}
                   </td>
                   <td className="px-4 py-3 cursor-pointer" onClick={() => onSelect(server.id)}>
-                    <Badge
-                      className={
-                        server.enabled
-                          ? 'bg-green-50 text-green-700 border border-green-100'
-                          : 'bg-gray-100 text-gray-500'
-                      }
-                    >
-                      {server.enabled ? `${(server.apps || []).length} apps` : 'Inactive'}
-                    </Badge>
+                    {server.enabled ? (
+                      <div className="flex items-center gap-1">
+                        {(server.apps || []).slice(0, 3).map((appName) => {
+                          const app = apps.find(a => a.name === appName);
+                          return app ? (
+                            <img
+                              key={appName}
+                              src={app.icon}
+                              alt={app.name}
+                              className="w-5 h-5 rounded border border-gray-200/50"
+                              title={app.name}
+                              onError={e => (e.currentTarget.style.display = 'none')}
+                            />
+                          ) : null;
+                        })}
+                        {(server.apps || []).length > 3 && (
+                          <span className="text-xs text-gray-500 italic ml-1">
+                            +{(server.apps || []).length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <Badge className="bg-gray-100 text-gray-500">
+                        Inactive
+                      </Badge>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
@@ -678,6 +699,8 @@ function ServerDetailView({
   const [editedDescription, setEditedDescription] = useState(server.description || '');
   const [editedIconUrl, setEditedIconUrl] = useState(server.iconUrl || '');
   const [editedCommand, setEditedCommand] = useState(`${server.command} ${(server.args || []).join(' ')}`);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const iconButtonRef = useRef<HTMLButtonElement>(null);
 
   const toggleAppInclusion = async (appName: string) => {
     const serverApps = server.apps || [];
@@ -740,9 +763,13 @@ function ServerDetailView({
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto p-8 space-y-8">
           <section className="bg-white/70 backdrop-blur-xl rounded-xl shadow-sm border border-gray-200/50 p-6 flex gap-6 items-start">
-            <div className="w-20 h-20 rounded-[18px] bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+            <button
+              ref={iconButtonRef}
+              onClick={() => setShowIconPicker(true)}
+              className="w-20 h-20 rounded-[18px] bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 hover:bg-gray-100 cursor-pointer transition-colors"
+            >
               <ServerIcon url={isEditing ? editedIconUrl : server.iconUrl} className="w-10 h-10" />
-            </div>
+            </button>
             <div className="flex-1 space-y-4">
               {!isEditing ? (
                 <div>
@@ -797,14 +824,6 @@ function ServerDetailView({
                       value={editedDescription}
                       onChange={(e) => setEditedDescription(e.target.value)}
                       placeholder="Short description"
-                    />
-                  </div>
-                  <div>
-                    <Label>Icon URL</Label>
-                    <Input
-                      value={editedIconUrl}
-                      onChange={(e) => setEditedIconUrl(e.target.value)}
-                      placeholder="https://..."
                     />
                   </div>
                   <div className="flex gap-2 pt-2">
@@ -938,14 +957,66 @@ function ServerDetailView({
           </div>
         </div>
       </div>
+      
+      {showIconPicker && (
+        <IconPicker
+          value={isEditing ? editedIconUrl : server.iconUrl}
+          onChange={(icon) => {
+            if (isEditing) {
+              setEditedIconUrl(icon);
+            } else {
+              // Update directly if not in edit mode
+              onUpdate({ ...server, iconUrl: icon });
+            }
+            setShowIconPicker(false);
+          }}
+          onClose={() => setShowIconPicker(false)}
+          anchorEl={iconButtonRef.current}
+        />
+      )}
     </div>
   );
 }
 
 function ManageAppsView({ apps, onRefresh }: { apps: AppConfig[]; onRefresh: () => void }) {
+  const [appSyncStates, setAppSyncStates] = useState<Map<string, boolean>>(new Map());
+
+  useEffect(() => {
+    const loadSyncStates = async () => {
+      const states = new Map<string, boolean>();
+      for (const app of apps) {
+        const syncEnabled = await window.electronAPI.getAppSyncState(app.name);
+        states.set(app.name, syncEnabled);
+      }
+      setAppSyncStates(states);
+    };
+    loadSyncStates();
+  }, [apps]);
+
   const handleSync = async () => {
     await window.electronAPI.syncServers();
     onRefresh();
+  };
+
+  const handleToggleSync = async (appName: string, currentState: boolean) => {
+    if (currentState) {
+      // Turning sync off - show confirmation
+      const hasBackup = await window.electronAPI.hasAppBackup(appName);
+      if (hasBackup) {
+        const confirmed = confirm(
+          `Turning off sync will restore ${appName}'s configuration to its backup state. Any synced servers will be removed from this app. Continue?`
+        );
+        if (!confirmed) return;
+      }
+    }
+    
+    await window.electronAPI.toggleAppSync(appName, !currentState);
+    setAppSyncStates(prev => new Map(prev).set(appName, !currentState));
+    
+    if (!currentState) {
+      // If turning sync back on, refresh to re-sync
+      await handleSync();
+    }
   };
 
   return (
@@ -969,54 +1040,58 @@ function ManageAppsView({ apps, onRefresh }: { apps: AppConfig[]; onRefresh: () 
         </div>
       </header>
       <div className="p-6 grid grid-cols-2 gap-4">
-        {(apps || []).map(app => (
-          <div
-            key={app.name}
-            className="bg-white/70 backdrop-blur-xl rounded-xl border border-gray-200/50 p-5 shadow-sm flex gap-4 hover:shadow-md transition-all"
-          >
-            <div className="relative">
-              <div className="w-16 h-16 rounded-[16px] border border-gray-200/50 flex items-center justify-center overflow-hidden bg-white shadow-sm">
-                <img
-                  src={app.icon}
-                  alt={app.name}
-                  className="w-10 h-10 object-contain"
-                  onError={e =>
-                    (e.currentTarget.src = 'https://placehold.co/40x40?text=' + app.name[0])
-                  }
-                />
+        {(apps || []).map(app => {
+          const syncEnabled = appSyncStates.get(app.name) ?? true;
+          return (
+            <div
+              key={app.name}
+              className="bg-white/70 backdrop-blur-xl rounded-xl border border-gray-200/50 p-5 shadow-sm flex gap-4 hover:shadow-md transition-all"
+            >
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl border border-gray-200/50 flex items-center justify-center overflow-hidden bg-white shadow-sm">
+                  <img
+                    src={app.icon}
+                    alt={app.name}
+                    className="w-10 h-10 object-contain"
+                    onError={e =>
+                      (e.currentTarget.src = 'https://placehold.co/40x40?text=' + app.name[0])
+                    }
+                  />
+                </div>
+                <div className={cn(
+                  "absolute -bottom-1 -right-1 w-5 h-5 border-[3px] border-white rounded-full",
+                  syncEnabled ? "bg-green-500" : "bg-gray-400"
+                )} />
               </div>
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-[3px] border-white rounded-full" />
-            </div>
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-medium text-gray-900">{app.name}</h3>
-                <Badge>Detected</Badge>
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-base font-medium text-gray-900">{app.name}</h3>
+                  <Badge>Detected</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-500">
+                    {syncEnabled ? 'Sync enabled' : 'Sync disabled'}
+                  </p>
+                  <div 
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => handleToggleSync(app.name, syncEnabled)}
+                  >
+                    <span className="text-xs text-gray-600">Sync</span>
+                    <Switch
+                      checked={syncEnabled}
+                      onChange={() => handleToggleSync(app.name, syncEnabled)}
+                    />
+                  </div>
+                </div>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Automatically synced when changes are made
-              </p>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function ExploreView() {
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-gray-500 animate-in fade-in duration-300">
-      <Compass className="w-12 h-12 mb-4 text-gray-300" />
-      <h3 className="text-lg font-medium text-gray-700">Explore Servers</h3>
-      <p className="text-sm mt-2 max-w-xs text-center">
-        Discover and install new MCP servers from the community registry.
-      </p>
-      <Button variant="secondary" className="mt-6">
-        Browse Registry
-      </Button>
-    </div>
-  );
-}
 
 interface Tool {
   name: string;
@@ -1165,6 +1240,18 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
   const updateToolArg = (key: string, value: any) => {
     setToolArgs(prev => ({ ...prev, [key]: value }));
   };
+  
+  // Check if all required parameters are filled
+  const areRequiredParametersFilled = () => {
+    if (!selectedTool?.inputSchema?.required) return true;
+    
+    return selectedTool.inputSchema.required.every((key: string) => {
+      const value = toolArgs[key];
+      if (value === undefined || value === null || value === '') return false;
+      if (typeof value === 'string' && value.trim() === '') return false;
+      return true;
+    });
+  };
 
   const renderInputForProperty = (key: string, prop: any, required: boolean) => {
     const value = toolArgs[key] ?? '';
@@ -1172,15 +1259,19 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
     if (prop.type === 'boolean') {
       return (
         <div key={key} className="flex items-center gap-3 p-3 bg-gray-50 rounded-md">
-          <Switch
-            checked={!!value}
-            onChange={() => updateToolArg(key, !value)}
-          />
-          <div className="flex-1">
-            <Label className="text-sm font-medium">{key}</Label>
-            {prop.description && (
-              <p className="text-xs text-gray-500 mt-0.5">{prop.description}</p>
-            )}
+          <div 
+            className="flex items-center gap-3 flex-1 cursor-pointer"
+            onClick={() => updateToolArg(key, !value)}
+          >
+            <Switch
+              checked={!!value}
+              onChange={() => updateToolArg(key, !value)}
+            />
+            <div className="flex-1">
+              <Label className="text-sm font-medium cursor-pointer">
+                {prop.description || key} <code className="text-xs text-gray-500 font-mono">({key})</code>
+              </Label>
+            </div>
           </div>
         </div>
       );
@@ -1190,12 +1281,9 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
       return (
         <div key={key}>
           <Label>
-            {key}
+            {prop.description || key} <code className="text-xs text-gray-500 font-mono">({key})</code>
             {required && <span className="text-red-500 ml-1">*</span>}
           </Label>
-          {prop.description && (
-            <p className="text-xs text-gray-500 mb-2">{prop.description}</p>
-          )}
           <select
             className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900/5"
             value={value}
@@ -1214,12 +1302,9 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
       return (
         <div key={key}>
           <Label>
-            {key}
+            {prop.description || key} <code className="text-xs text-gray-500 font-mono">({key})</code>
             {required && <span className="text-red-500 ml-1">*</span>}
           </Label>
-          {prop.description && (
-            <p className="text-xs text-gray-500 mb-2">{prop.description}</p>
-          )}
           <Input
             type="number"
             value={value}
@@ -1234,12 +1319,9 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
       return (
         <div key={key}>
           <Label>
-            {key}
+            {prop.description || key} <code className="text-xs text-gray-500 font-mono">({key})</code>
             {required && <span className="text-red-500 ml-1">*</span>}
           </Label>
-          {prop.description && (
-            <p className="text-xs text-gray-500 mb-2">{prop.description}</p>
-          )}
           <textarea
             className="w-full px-3 py-2 text-sm font-mono bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900/5"
             rows={3}
@@ -1261,12 +1343,9 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
     return (
       <div key={key}>
         <Label>
-          {key}
+          {prop.description || key} <code className="text-xs text-gray-500 font-mono">({key})</code>
           {required && <span className="text-red-500 ml-1">*</span>}
         </Label>
-        {prop.description && (
-          <p className="text-xs text-gray-500 mb-2">{prop.description}</p>
-        )}
         <Input
           type="text"
           value={value}
@@ -1434,7 +1513,7 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
               <Button
                 size="sm"
                 variant="primary"
-                disabled={!isRunning || isExecuting}
+                disabled={!isRunning || isExecuting || !areRequiredParametersFilled()}
                 className="gap-2"
                 onClick={handleRunTool}
               >

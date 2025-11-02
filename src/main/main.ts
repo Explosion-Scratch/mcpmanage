@@ -4,6 +4,7 @@ import liquidGlass from 'electron-liquid-glass';
 import { MCPConfigManager } from './services/MCPConfigManager';
 import { MasterServerStore } from './services/MasterServerStore';
 import { MCPStudioService } from './services/MCPStudioService';
+import { BackupService } from './services/BackupService';
 import { AppConfig, MCPServer, MasterMCPServer, PermissionLevel } from '../shared/types';
 import { getAvailableAdapters, AppAdapter } from './apps';
 
@@ -11,7 +12,9 @@ let mainWindow: BrowserWindow | null = null;
 let mcpManager: MCPConfigManager;
 let masterStore: MasterServerStore;
 let mcpStudioService: MCPStudioService;
+let backupService: BackupService;
 let appAdapters: AppAdapter[] = [];
+let appSyncStates: Map<string, boolean> = new Map();
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -53,6 +56,17 @@ app.whenReady().then(async () => {
   mcpManager = new MCPConfigManager(appAdapters);
   masterStore = new MasterServerStore();
   mcpStudioService = new MCPStudioService();
+  backupService = new BackupService();
+  
+  // Create backups for all apps on first detection
+  for (const adapter of appAdapters) {
+    const configExists = await adapter.configExists();
+    if (configExists) {
+      const servers = await mcpManager.readAppConfig(adapter);
+      await backupService.createBackup(adapter.name, servers);
+      appSyncStates.set(adapter.name, true); // Sync is enabled by default
+    }
+  }
   
   const appServers = await mcpManager.getAllServers();
   await masterStore.syncFromAppConfigs(appServers);
@@ -252,6 +266,33 @@ function setupIPCHandlers() {
 
   ipcMain.handle('studio:is-server-running', async (_, serverId: string) => {
     return mcpStudioService.isServerRunning(serverId);
+  });
+  
+  // App sync management
+  ipcMain.handle('get-app-sync-state', async (_, appName: string) => {
+    return appSyncStates.get(appName) ?? true;
+  });
+  
+  ipcMain.handle('toggle-app-sync', async (_, appName: string, enabled: boolean) => {
+    const adapter = appAdapters.find(a => a.name === appName);
+    if (!adapter) {
+      throw new Error(`App not found: ${appName}`);
+    }
+    
+    if (!enabled) {
+      // Restore from backup
+      const backup = await backupService.getBackup(appName);
+      if (backup) {
+        await mcpManager.writeAppConfig(adapter, backup);
+      }
+    }
+    
+    appSyncStates.set(appName, enabled);
+    return true;
+  });
+  
+  ipcMain.handle('has-app-backup', async (_, appName: string) => {
+    return await backupService.hasBackup(appName);
   });
 }
 

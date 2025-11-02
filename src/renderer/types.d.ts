@@ -39,6 +39,9 @@ declare global {
       studioCallTool: (serverId: string, toolName: string, args: Record<string, unknown>) => Promise<MCPToolResult>;
       studioIsServerRunning: (serverId: string) => Promise<boolean>;
       onStudioLog: (callback: (serverId: string, message: string) => void) => () => void;
+      getAppSyncState: (appName: string) => Promise<boolean>;
+      toggleAppSync: (appName: string, enabled: boolean) => Promise<boolean>;
+      hasAppBackup: (appName: string) => Promise<boolean>;
     };
   }
 }

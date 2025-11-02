@@ -1,8 +1,32 @@
-# MCP Manager - New Features
+# MCP Manager - Features
 
 ## Overview
 
-This document describes the new features implemented to enhance MCP Manager's compatibility with Zed, Cursor, VSCode, and other MCP-compatible applications.
+This document describes the features implemented in MCP Manager for managing MCP (Model Context Protocol) servers across multiple applications including Claude Desktop, Zed, Cursor, VSCode, and Windsurf.
+
+## Application Interface
+
+The MCP Manager provides a clean, Notion-like interface with three main sections:
+
+### 1. Manage Servers (⌘1)
+- View and manage all configured MCP servers
+- Toggle servers on/off globally
+- Add new servers with automatic command parsing
+- Import servers from JSON configurations
+- Click servers to view details and configure per-app settings
+
+### 2. Manage Apps (⌘2)
+- View all target applications
+- Monitor application connection status
+- Synchronize servers across applications
+- View apps with custom syntax mappings
+
+### 3. Studio (⌘3)
+- Test MCP servers in a controlled environment
+- Inspect available tools and parameters
+- Execute tools with custom parameters
+- Monitor real-time console output
+- Analyze tool execution results
 
 ## Master Server List
 
@@ -271,11 +295,21 @@ interface SyntaxMappings {
 - **Sync All Button**: Synchronizes all servers from app configs to master store
 - **Exclusion Rules Display**: Shows number of exclusion rules per app
 - **Custom Syntax Indicator**: Visual indicator for apps with custom syntax mappings
+- **Application Detection**: Automatically detects and displays compatible applications
 
 ### Server Management
 - **Real-time Toggling**: Server enable/disable now persists immediately
 - **App Association Management**: Toggle server for specific apps in detail view
 - **Master Store Integration**: All operations use centralized master store
+- **Import from JSON**: Bulk import servers using standard mcpServers configuration format
+- **Command Parsing**: Automatic parsing of bash commands into command and arguments
+
+### Studio Mode
+- **Interactive Testing**: Start/stop MCP servers for testing
+- **Tool Inspection**: View available tools and their schemas
+- **Parameter Configuration**: Dynamic form generation based on tool schemas
+- **Console Monitoring**: Real-time console output and log viewing
+- **Response Analysis**: View tool execution results with syntax highlighting
 
 ## Migration Notes
 
@@ -336,8 +370,9 @@ Potential future additions:
 - Conflict resolution for duplicate servers
 - Server version tracking
 - Automatic updates for MCP servers
-- Server marketplace integration
 - Custom server templates
 - Backup and restore functionality
+- Advanced filtering and search capabilities
+- Server health monitoring
 
 

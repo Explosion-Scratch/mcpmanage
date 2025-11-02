@@ -27,5 +27,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('studio:log', subscription);
     return () => ipcRenderer.removeListener('studio:log', subscription);
   },
+  getAppSyncState: (appName: string) => ipcRenderer.invoke('get-app-sync-state', appName),
+  toggleAppSync: (appName: string, enabled: boolean) => ipcRenderer.invoke('toggle-app-sync', appName, enabled),
+  hasAppBackup: (appName: string) => ipcRenderer.invoke('has-app-backup', appName),
 });
 
