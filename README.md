@@ -1,7 +1,10 @@
-<div align=center><img src="src/renderer/assets/logo.svg" width=96 alt="MCP manage logo"/></div>
-<h1>MCP Manage</h1>
-
 <div align=center><img src="examples/list.png" width="600" alt="MCP Manage Demo Screenshot"/></div>
+<div align=center>
+    <h1>
+        <img src="src/renderer/assets/logo.svg" width=32 align=center alt="MCP manage logo"/>
+        MCP Manage
+    </h1>
+</div>
 
 Sync  MCP servers across different applications and CLIs. Supports Claude CLI, Cline, Cursor, GEmini, Kilo Code, OpenCode, Qwen, VSCode, Windsurf and Zed so far. This application safely syncs MCP servers to each application's json file, preserving old settings, backing up settings, etc. Easily manage all your MCP servers!
 
