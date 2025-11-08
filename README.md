@@ -1,4 +1,5 @@
-# MCP Manage
+<div align=center><img src="src/renderer/assets/logo.svg" width=96 alt="MCP manage logo"/></div>
+<h1>MCP Manage</h1>
 
 ![MCP Manage Demo Screenshot](examples/list.png)
 
