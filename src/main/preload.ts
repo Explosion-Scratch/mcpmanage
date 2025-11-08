@@ -30,5 +30,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAppSyncState: (appName: string) => ipcRenderer.invoke('get-app-sync-state', appName),
   toggleAppSync: (appName: string, enabled: boolean) => ipcRenderer.invoke('toggle-app-sync', appName, enabled),
   hasAppBackup: (appName: string) => ipcRenderer.invoke('has-app-backup', appName),
+  getAppBackup: (appName: string) => ipcRenderer.invoke('get-app-backup', appName),
+  getAppCurrentConfig: (appName: string) => ipcRenderer.invoke('get-app-current-config', appName),
+  getAppAppliedServers: (appName: string) => ipcRenderer.invoke('get-app-applied-servers', appName),
+  exportAppData: () => ipcRenderer.invoke('export-app-data'),
+  importAppDataZip: (zipBuffer: ArrayBuffer) => ipcRenderer.invoke('import-app-data-zip', Buffer.from(zipBuffer)),
 });
 

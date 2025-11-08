@@ -100,6 +100,7 @@ function setupIPCHandlers() {
       name: adapter.name,
       icon: adapter.icon,
       color: adapter.color,
+      syncEnabled: appSyncStates.get(adapter.name) ?? true,
     } as AppConfig));
   });
 
@@ -293,6 +294,98 @@ function setupIPCHandlers() {
   
   ipcMain.handle('has-app-backup', async (_, appName: string) => {
     return await backupService.hasBackup(appName);
+  });
+
+  ipcMain.handle('get-app-backup', async (_, appName: string) => {
+    return await backupService.getBackup(appName);
+  });
+
+  ipcMain.handle('get-app-current-config', async (_, appName: string) => {
+    const adapter = appAdapters.find(a => a.name === appName);
+    if (!adapter) {
+      throw new Error(`App not found: ${appName}`);
+    }
+    return await mcpManager.readAppConfig(adapter);
+  });
+
+  ipcMain.handle('get-app-applied-servers', async (_, appName: string) => {
+    const allServers = await masterStore.getAllServers();
+    return allServers.filter(s => s.apps.includes(appName));
+  });
+
+  ipcMain.handle('export-app-data', async () => {
+    const AdmZip = require('adm-zip');
+    const zip = new AdmZip();
+    
+    const masterServers = await masterStore.getAllServers();
+    const mcpServers: any = {};
+    masterServers.forEach(server => {
+      mcpServers[server.id] = {
+        command: server.command,
+        args: server.args,
+        ...(server.env && { env: server.env }),
+      };
+    });
+    
+    zip.addFile('mcp.json', Buffer.from(JSON.stringify({ mcpServers }, null, 2)));
+    
+    const appData = {
+      apps: appAdapters.map(a => ({
+        name: a.name,
+        icon: a.icon,
+        color: a.color,
+        syncEnabled: appSyncStates.get(a.name) ?? true,
+      })),
+      masterServers: masterServers,
+      version: app.getVersion(),
+      exportDate: new Date().toISOString(),
+    };
+    zip.addFile('app-data.json', Buffer.from(JSON.stringify(appData, null, 2)));
+    
+    for (const adapter of appAdapters) {
+      const backup = await backupService.getBackup(adapter.name);
+      if (backup) {
+        zip.addFile(
+          `backups/${adapter.name}.json`, 
+          Buffer.from(JSON.stringify({ config: backup }, null, 2))
+        );
+      }
+    }
+    
+    return zip.toBuffer();
+  });
+
+  ipcMain.handle('import-app-data-zip', async (_, zipBuffer: Buffer) => {
+    const AdmZip = require('adm-zip');
+    const zip = new AdmZip(zipBuffer);
+    
+    const appDataEntry = zip.getEntry('app-data.json');
+    if (appDataEntry) {
+      const appData = JSON.parse(appDataEntry.getData().toString('utf8'));
+      
+      if (appData.masterServers) {
+        for (const server of appData.masterServers) {
+          await masterStore.addServer(server);
+        }
+      }
+      
+      if (appData.apps) {
+        for (const appInfo of appData.apps) {
+          appSyncStates.set(appInfo.name, appInfo.syncEnabled ?? true);
+        }
+      }
+    }
+    
+    const backupEntries = zip.getEntries().filter(e => e.entryName.startsWith('backups/'));
+    for (const entry of backupEntries) {
+      const appName = entry.entryName.replace('backups/', '').replace('.json', '');
+      const backupData = JSON.parse(entry.getData().toString('utf8'));
+      if (backupData.config) {
+        await backupService.createBackup(appName, backupData.config);
+      }
+    }
+    
+    return true;
   });
 }
 

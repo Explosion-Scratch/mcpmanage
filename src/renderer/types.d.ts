@@ -42,6 +42,11 @@ declare global {
       getAppSyncState: (appName: string) => Promise<boolean>;
       toggleAppSync: (appName: string, enabled: boolean) => Promise<boolean>;
       hasAppBackup: (appName: string) => Promise<boolean>;
+      getAppBackup: (appName: string) => Promise<any>;
+      getAppCurrentConfig: (appName: string) => Promise<any>;
+      getAppAppliedServers: (appName: string) => Promise<MasterMCPServer[]>;
+      exportAppData: () => Promise<Buffer>;
+      importAppDataZip: (zipBuffer: ArrayBuffer) => Promise<boolean>;
     };
   }
 }

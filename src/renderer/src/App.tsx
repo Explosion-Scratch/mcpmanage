@@ -18,6 +18,10 @@ import {
   ShieldAlert,
   FileJson,
   Pencil,
+  Download,
+  Upload,
+  Info,
+  X,
 } from 'lucide-react';
 import hljs from 'highlight.js/lib/core';
 import json from 'highlight.js/lib/languages/json';
@@ -30,7 +34,7 @@ import type { AppConfig, MCPServerWithMetadata, PermissionLevel } from '../../sh
 hljs.registerLanguage('json', json);
 hljs.registerLanguage('markdown', markdown);
 
-type Tab = 'servers' | 'apps' | 'studio';
+type Tab = 'servers' | 'apps' | 'studio' | 'about';
 
 function SyntaxHighlightedText({ text }: { text: string }) {
   const [highlightedHtml, setHighlightedHtml] = useState('');
@@ -80,15 +84,20 @@ export default function MCPManager() {
           e.preventDefault();
           setActiveTab('studio');
         }
-      } else if (e.key === 'Escape' && selectedServerId) {
-        e.preventDefault();
-        setSelectedServerId(null);
+      } else if (e.key === 'Escape') {
+        if (selectedServerId) {
+          e.preventDefault();
+          setSelectedServerId(null);
+        } else if (activeTab === 'about') {
+          e.preventDefault();
+          setActiveTab('servers');
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedServerId]);
+  }, [selectedServerId, activeTab]);
 
   const loadData = async () => {
     const appsData = await window.electronAPI.getApps();
@@ -170,13 +179,18 @@ export default function MCPManager() {
       />
       
       <div className="w-[220px] shrink-0 bg-white/40 border-r border-gray-200/30 backdrop-blur-3xl flex flex-col py-4 z-10 relative">
-        <div className="h-10 w-full flex items-center px-4 mb-4" />
+        <div className="h-4 w-full flex items-center px-4 mb-4" />
 
         <div className="px-4 mb-4">
           <h1 className="font-semibold text-sm flex items-center gap-2">
-            <div className="w-6 h-6 bg-gray-900 rounded-md flex items-center justify-center text-white">
-              <CommandIcon className="w-3.5 h-3.5" />
-            </div>
+            <img 
+              src="/assets/logo.svg" 
+              alt="MCP Manager" 
+              className="w-6 h-6 rounded-md shadow-sm"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
             MCP Manager
           </h1>
         </div>
@@ -207,6 +221,15 @@ export default function MCPManager() {
             shortcut="⌘3"
           />
         </nav>
+        
+        <div className="px-2">
+          <SidebarItem
+            icon={Info}
+            label="About"
+            active={activeTab === 'about'}
+            onClick={() => setActiveTab('about')}
+          />
+        </div>
 
         <div className="px-4 py-2 text-xs text-gray-400 flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
@@ -236,8 +259,9 @@ export default function MCPManager() {
             onDelete={handleDeleteServer}
           />
         )}
-        {activeTab === 'apps' && <ManageAppsView apps={apps} onRefresh={loadData} />}
+        {activeTab === 'apps' && <ManageAppsView apps={apps} servers={servers} onRefresh={loadData} />}
         {activeTab === 'studio' && <StudioView servers={servers.filter(s => s.enabled)} />}
+        {activeTab === 'about' && <AboutView />}
       </div>
     </div>
   );
@@ -534,10 +558,29 @@ function ManageServersView({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className="gap-1.5"
+            onClick={async () => {
+              const buffer = await window.electronAPI.exportAppData();
+              const blob = new Blob([buffer], { type: 'application/zip' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `mcp-manager-data-${new Date().toISOString().split('T')[0]}.zip`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5"
             onClick={() => setIsImporting(!isImporting)}
           >
-            <FileJson className="w-4 h-4" />
+            <FileJson className="w-3.5 h-3.5" />
+            Import
             <span className="text-[10px] font-mono text-gray-400">⌘I</span>
           </Button>
           <Button
@@ -555,7 +598,29 @@ function ManageServersView({
 
       {isImporting && (
         <div className="border-b border-gray-200/30 bg-white/60 backdrop-blur-xl p-6 animate-in slide-in-from-top-2 duration-200">
-          <h3 className="text-sm font-medium mb-2">Import from JSON</h3>
+          <h3 className="text-sm font-medium mb-2">
+            Import from JSON{' '}
+            <button
+              onClick={async () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.zip';
+                input.onchange = async (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    await window.electronAPI.importAppDataZip(arrayBuffer);
+                    setIsImporting(false);
+                    onRefresh();
+                  }
+                };
+                input.click();
+              }}
+              className="text-blue-600 hover:text-blue-700 text-xs underline"
+            >
+              (Import app data zip)
+            </button>
+          </h3>
           <p className="text-xs text-gray-500 mb-3">
             Paste a standard `mcpServers` configuration object.
           </p>
@@ -629,22 +694,35 @@ function ManageServersView({
                   <td className="px-4 py-3 cursor-pointer" onClick={() => onSelect(server.id)}>
                     {server.enabled ? (
                       <div className="flex items-center gap-1">
-                        {(server.apps || []).slice(0, 3).map((appName) => {
+                        {(server.apps || [])
+                          .filter(appName => {
+                            const app = apps.find(a => a.name === appName);
+                            return app && (app.syncEnabled !== false);
+                          })
+                          .sort()
+                          .slice(0, 3)
+                          .map((appName) => {
+                            const app = apps.find(a => a.name === appName);
+                            return app ? (
+                              <img
+                                key={appName}
+                                src={app.icon}
+                                alt={app.name}
+                                className="w-5 h-5 rounded border border-gray-200/50"
+                                title={app.name}
+                                onError={e => (e.currentTarget.style.display = 'none')}
+                              />
+                            ) : null;
+                          })}
+                        {(server.apps || []).filter(appName => {
                           const app = apps.find(a => a.name === appName);
-                          return app ? (
-                            <img
-                              key={appName}
-                              src={app.icon}
-                              alt={app.name}
-                              className="w-5 h-5 rounded border border-gray-200/50"
-                              title={app.name}
-                              onError={e => (e.currentTarget.style.display = 'none')}
-                            />
-                          ) : null;
-                        })}
-                        {(server.apps || []).length > 3 && (
+                          return app && (app.syncEnabled !== false);
+                        }).length > 3 && (
                           <span className="text-xs text-gray-500 italic ml-1">
-                            +{(server.apps || []).length - 3} more
+                            +{(server.apps || []).filter(appName => {
+                              const app = apps.find(a => a.name === appName);
+                              return app && (app.syncEnabled !== false);
+                            }).length - 3} more
                           </span>
                         )}
                       </div>
@@ -701,6 +779,19 @@ function ServerDetailView({
   const [editedCommand, setEditedCommand] = useState(`${server.command} ${(server.args || []).join(' ')}`);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const iconButtonRef = useRef<HTMLButtonElement>(null);
+  const [appSyncStates, setAppSyncStates] = useState<Map<string, boolean>>(new Map());
+
+  useEffect(() => {
+    const loadSyncStates = async () => {
+      const states = new Map<string, boolean>();
+      for (const app of apps) {
+        const syncEnabled = await window.electronAPI.getAppSyncState(app.name);
+        states.set(app.name, syncEnabled);
+      }
+      setAppSyncStates(states);
+    };
+    loadSyncStates();
+  }, [apps]);
 
   const toggleAppInclusion = async (appName: string) => {
     const serverApps = server.apps || [];
@@ -912,7 +1003,10 @@ function ServerDetailView({
                 Application Sync
               </h3>
               <div className="bg-white/70 backdrop-blur-xl rounded-lg border border-gray-200/50 overflow-hidden">
-                {(apps || []).map(app => {
+                {(apps || []).filter(app => {
+                  const syncEnabled = appSyncStates.get(app.name) ?? true;
+                  return syncEnabled;
+                }).map(app => {
                   const isIncluded = (server.apps || []).includes(app.name);
                   return (
                     <div
@@ -978,8 +1072,14 @@ function ServerDetailView({
   );
 }
 
-function ManageAppsView({ apps, onRefresh }: { apps: AppConfig[]; onRefresh: () => void }) {
+function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; servers: MCPServerWithMetadata[]; onRefresh: () => void }) {
   const [appSyncStates, setAppSyncStates] = useState<Map<string, boolean>>(new Map());
+  const [selectedApp, setSelectedApp] = useState<string | null>(null);
+  const [appDetails, setAppDetails] = useState<{
+    appliedServers: MCPServerWithMetadata[];
+    backup: any;
+    current: any;
+  } | null>(null);
 
   useEffect(() => {
     const loadSyncStates = async () => {
@@ -992,6 +1092,22 @@ function ManageAppsView({ apps, onRefresh }: { apps: AppConfig[]; onRefresh: () 
     };
     loadSyncStates();
   }, [apps]);
+
+  useEffect(() => {
+    if (selectedApp) {
+      const loadAppDetails = async () => {
+        const [appliedServers, backup, current] = await Promise.all([
+          window.electronAPI.getAppAppliedServers(selectedApp),
+          window.electronAPI.getAppBackup(selectedApp),
+          window.electronAPI.getAppCurrentConfig(selectedApp),
+        ]);
+        setAppDetails({ appliedServers, backup, current });
+      };
+      loadAppDetails();
+    } else {
+      setAppDetails(null);
+    }
+  }, [selectedApp]);
 
   const handleSync = async () => {
     await window.electronAPI.syncServers();
@@ -1045,7 +1161,8 @@ function ManageAppsView({ apps, onRefresh }: { apps: AppConfig[]; onRefresh: () 
           return (
             <div
               key={app.name}
-              className="bg-white/70 backdrop-blur-xl rounded-xl border border-gray-200/50 p-5 shadow-sm flex gap-4 hover:shadow-md transition-all"
+              className="bg-white/70 backdrop-blur-xl rounded-xl border border-gray-200/50 p-5 shadow-sm flex gap-4 hover:shadow-md transition-all cursor-pointer"
+              onClick={() => setSelectedApp(app.name)}
             >
               <div className="relative">
                 <div className="w-16 h-16 rounded-2xl border border-gray-200/50 flex items-center justify-center overflow-hidden bg-white shadow-sm">
@@ -1072,10 +1189,7 @@ function ManageAppsView({ apps, onRefresh }: { apps: AppConfig[]; onRefresh: () 
                   <p className="text-xs text-gray-500">
                     {syncEnabled ? 'Sync enabled' : 'Sync disabled'}
                   </p>
-                  <div 
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => handleToggleSync(app.name, syncEnabled)}
-                  >
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     <span className="text-xs text-gray-600">Sync</span>
                     <Switch
                       checked={syncEnabled}
@@ -1088,6 +1202,77 @@ function ManageAppsView({ apps, onRefresh }: { apps: AppConfig[]; onRefresh: () 
           );
         })}
       </div>
+      
+      {selectedApp && appDetails && (
+        <div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-8"
+          onClick={() => setSelectedApp(null)}
+        >
+          <div 
+            className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">{selectedApp} Details</h2>
+              <button
+                onClick={() => setSelectedApp(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <section>
+                <h3 className="text-sm font-medium text-gray-900 mb-3">Applied MCP Servers</h3>
+                <div className="bg-white/70 rounded-lg border border-gray-200/50 divide-y divide-gray-100/50">
+                  {appDetails.appliedServers.length === 0 ? (
+                    <div className="p-4 text-sm text-gray-500 italic text-center">
+                      No servers applied to this application
+                    </div>
+                  ) : (
+                    appDetails.appliedServers.map(server => (
+                      <div key={server.id} className="p-3 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                          <ServerIcon url={server.iconUrl} className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-sm text-gray-900">{server.name}</div>
+                          {server.description && (
+                            <div className="text-xs text-gray-500">{server.description}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+              
+              <section>
+                <h3 className="text-sm font-medium text-gray-900 mb-3">Backup Settings</h3>
+                {appDetails.backup ? (
+                  <SyntaxHighlightedText text={JSON.stringify(appDetails.backup, null, 2)} />
+                ) : (
+                  <div className="p-4 text-sm text-gray-500 italic bg-white/70 rounded-lg border border-gray-200/50">
+                    No backup available
+                  </div>
+                )}
+              </section>
+              
+              <section>
+                <h3 className="text-sm font-medium text-gray-900 mb-3">Current Settings</h3>
+                {appDetails.current && Object.keys(appDetails.current).length > 0 ? (
+                  <SyntaxHighlightedText text={JSON.stringify(appDetails.current, null, 2)} />
+                ) : (
+                  <div className="p-4 text-sm text-gray-500 italic bg-white/70 rounded-lg border border-gray-200/50">
+                    No configuration found
+                  </div>
+                )}
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1667,6 +1852,61 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AboutView() {
+  return (
+    <div className="flex flex-col h-full bg-white/20 backdrop-blur-xl animate-in fade-in duration-300">
+      <div className="flex-1 flex items-center justify-center p-12">
+        <div className="max-w-md w-full text-center space-y-8">
+          <div className="flex justify-center">
+            <img 
+              src="/assets/logo.svg" 
+              alt="MCP Manager" 
+              className="w-24 h-24 rounded-[24px] shadow-2xl ring-1 ring-gray-900/10"
+              onError={(e) => {
+                const div = document.createElement('div');
+                div.className = 'w-24 h-24 bg-gradient-to-br from-gray-800 via-gray-900 to-gray-950 rounded-[24px] flex items-center justify-center text-white shadow-2xl ring-1 ring-gray-900/10';
+                div.innerHTML = '<svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M18 3a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h12zM8 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>';
+                e.currentTarget.parentElement?.replaceChild(div, e.currentTarget);
+              }}
+            />
+          </div>
+          
+          <div className="space-y-3">
+            <h1 className="text-3xl font-semibold text-gray-900">MCP Manager</h1>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-sm rounded-full border border-gray-200/50">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-sm font-medium text-gray-700">Version 1.0.0</span>
+            </div>
+          </div>
+          
+          <div className="pt-6 border-t border-gray-200/30">
+            <p className="text-sm text-gray-600 mb-3">
+              A beautiful tool for managing Model Context Protocol servers across all your AI applications
+            </p>
+            <a
+              href="https://github.com/explosion-scratch"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 transition-colors group"
+            >
+              Made by
+              <span className="font-medium text-blue-600 group-hover:text-blue-700 underline underline-offset-2">
+                @Explosion-Scratch
+              </span>
+            </a>
+          </div>
+          
+          <div className="pt-4">
+            <p className="text-xs text-gray-400">
+              Press <kbd className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">esc</kbd> to return
+            </p>
           </div>
         </div>
       </div>
