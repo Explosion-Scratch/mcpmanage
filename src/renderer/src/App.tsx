@@ -54,7 +54,7 @@ function SyntaxHighlightedText({ text }: { text: string }) {
   }, [text]);
 
   return (
-    <pre className="text-sm whitespace-pre-wrap font-mono max-h-[500px] overflow-y-auto bg-white/70 backdrop-blur-sm text-gray-900 p-3 rounded-md border border-gray-200/50">
+    <pre className="text-sm whitespace-pre-wrap font-mono max-h-[500px] overflow-y-auto bg-[var(--bg-code)] backdrop-blur-sm text-[var(--text-primary)] p-3 rounded-md border border-[var(--border-secondary)]">
       <code dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
     </pre>
   );
@@ -173,17 +173,17 @@ export default function MCPManager() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-transparent text-gray-900 font-sans overflow-hidden selection:bg-[#cce5ff]">
+    <div className="flex h-screen w-full min-w-[800px] bg-transparent text-[var(--text-primary)] font-sans overflow-hidden selection:bg-[var(--selection-bg)]">
       <div
         className="absolute top-0 left-0 right-0 h-3 z-50"
         style={{ WebkitAppRegion: 'drag' } as any}
       />
       
-      <div className="w-[220px] shrink-0 bg-white/40 border-r border-gray-200/30 backdrop-blur-3xl flex flex-col py-4 z-10 relative">
+      <div className="w-[200px] min-w-[180px] shrink-0 bg-[var(--bg-primary)] border-r border-[var(--border-primary)] backdrop-blur-3xl flex flex-col py-4 z-10 relative">
         <div className="h-4 w-full flex items-center px-4 mb-4" />
 
         <div className="px-4 mb-4">
-          <h1 className="font-semibold text-sm flex items-center gap-2">
+          <h1 className="font-semibold text-sm flex items-center gap-2 text-[var(--text-primary)]">
             <img 
               src="/assets/logo.svg" 
               alt="MCP Manager" 
@@ -232,13 +232,13 @@ export default function MCPManager() {
           />
         </div>
 
-        <div className="px-4 py-2 text-xs text-gray-400 flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
+        <div className="px-4 py-2 text-xs text-[var(--text-tertiary)] flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-[var(--switch-on)] shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
           System Synced
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-white/50 relative">
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-[var(--bg-secondary)] relative">
         {activeTab === 'servers' && !selectedServerId && (
           <ManageServersView
             servers={servers}
@@ -287,21 +287,21 @@ function SidebarItem({
       className={cn(
         'w-full flex items-center gap-2 px-2 py-1.5 text-[13px] font-medium rounded-md transition-all duration-150 group',
         active
-          ? 'bg-gray-900/10 text-gray-900 shadow-sm'
-          : 'text-gray-500 hover:bg-gray-900/5 hover:text-gray-900'
+          ? 'bg-[var(--bg-active)] text-[var(--text-primary)] shadow-sm'
+          : 'text-[var(--text-secondary)] hover:bg-[var(--bg-active)] hover:text-[var(--text-primary)]'
       )}
     >
       <Icon
         className={cn(
           'w-4 h-4 transition-colors',
-          active ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-500'
+          active ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]'
         )}
       />
-      <span className="flex-1 text-left">{label}</span>
+      <span className="flex-1 text-left truncate">{label}</span>
       {shortcut && (
         <span className={cn(
-          'text-[10px] font-mono px-1 py-0.5 rounded transition-colors',
-          active ? 'text-gray-500' : 'text-gray-400 opacity-0 group-hover:opacity-100'
+          'text-[10px] font-mono px-1 py-0.5 rounded transition-colors shrink-0',
+          active ? 'text-[var(--text-secondary)]' : 'text-[var(--text-tertiary)] opacity-0 group-hover:opacity-100'
         )}>
           {shortcut}
         </span>
@@ -436,15 +436,15 @@ function ManageServersView({
     return (
       <div className="flex flex-col h-full animate-in fade-in duration-300 relative">
         <div className="absolute inset-0 bg-transparent" />
-        <div className="relative z-10 flex flex-col items-center justify-center h-full p-8">
+        <div className="relative z-10 flex flex-col items-center justify-center h-full p-4 sm:p-8">
           <form
             onSubmit={handleAddSubmit}
-            className="w-full max-w-2xl bg-white/80 rounded-2xl shadow-2xl border border-gray-200/50 p-8 space-y-6 animate-in zoom-in-95 duration-200"
+            className="w-full max-w-2xl bg-[var(--bg-modal)] backdrop-blur-xl rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--border-secondary)] p-6 sm:p-8 space-y-6 animate-in zoom-in-95 duration-200"
           >
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Add New Server</h2>
-                <p className="text-sm text-gray-500 mt-1">Install and configure a new MCP server</p>
+                <h2 className="text-xl font-semibold text-[var(--text-primary)]">Add New Server</h2>
+                <p className="text-sm text-[var(--text-secondary)] mt-1">Install and configure a new MCP server</p>
               </div>
               <button
                 type="button"
@@ -455,7 +455,7 @@ function ManageServersView({
                   setNewIcon('');
                   setNewDesc('');
                 }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
               >
                 <XCircle className="w-6 h-6" />
               </button>
@@ -466,7 +466,7 @@ function ManageServersView({
                 <Label>Installation Command *</Label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <TerminalSquare className="w-4 h-4 text-gray-400" />
+                    <TerminalSquare className="w-4 h-4 text-[var(--text-tertiary)]" />
                   </div>
                   <Input
                     required
@@ -480,7 +480,7 @@ function ManageServersView({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Name *</Label>
                   <Input
@@ -496,10 +496,10 @@ function ManageServersView({
                     ref={iconButtonRef}
                     type="button"
                     onClick={() => setShowIconPicker(true)}
-                    className="w-full h-8 px-3 text-sm border border-gray-200 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    className="w-full h-8 px-3 text-sm border border-[var(--border-input)] bg-[var(--bg-input)] rounded-md hover:bg-[var(--bg-hover)] transition-colors flex items-center gap-2"
                   >
                     <ServerIcon url={newIcon} className="w-4 h-4" />
-                    <span className="text-gray-600 flex-1 text-left">
+                    <span className="text-[var(--text-secondary)] flex-1 text-left truncate">
                       {newIcon ? newIcon.replace('ph:', '').replace('-light', '') : 'Choose icon...'}
                     </span>
                   </button>
@@ -516,10 +516,10 @@ function ManageServersView({
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200/50">
-              <div className="text-xs text-gray-500 flex items-center gap-4">
+            <div className="flex items-center justify-between pt-4 border-t border-[var(--border-primary)]">
+              <div className="text-xs text-[var(--text-secondary)] flex items-center gap-4">
                 <span className="flex items-center gap-1.5">
-                  <kbd className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">esc</kbd>
+                  <kbd className="px-2 py-1 bg-[var(--bg-badge)] border border-[var(--border-input)] rounded text-[10px] font-mono">esc</kbd>
                   to cancel
                 </span>
               </div>
@@ -548,18 +548,18 @@ function ManageServersView({
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-300">
-      <header className="h-14 shrink-0 px-6 flex items-center justify-between border-b border-gray-200/30 bg-white/40 backdrop-blur-xl">
-        <div>
-          <h2 className="text-sm font-semibold text-gray-900">Configured Servers</h2>
-          <p className="text-xs text-gray-500">
+      <header className="h-14 shrink-0 px-4 sm:px-6 flex items-center justify-between border-b border-[var(--border-primary)] bg-[var(--bg-primary)] backdrop-blur-xl">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Configured Servers</h2>
+          <p className="text-xs text-[var(--text-secondary)] truncate">
             Manage MCP servers synced across your system
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5"
+            className="gap-1.5 hidden sm:flex"
             onClick={async () => {
               const buffer = await window.electronAPI.exportAppData();
               const blob = new Blob([buffer], { type: 'application/zip' });
@@ -581,8 +581,8 @@ function ManageServersView({
             onClick={() => setIsImporting(!isImporting)}
           >
             <FileJson className="w-3.5 h-3.5" />
-            Import
-            <span className="text-[10px] font-mono text-gray-400">⌘I</span>
+            <span className="hidden sm:inline">Import</span>
+            <span className="text-[10px] font-mono text-[var(--text-tertiary)] hidden sm:inline">⌘I</span>
           </Button>
           <Button
             variant="primary"
@@ -591,15 +591,15 @@ function ManageServersView({
             onClick={() => setIsAdding(true)}
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Server
-            <span className="text-[10px] font-mono opacity-70">⌘N</span>
+            <span className="hidden sm:inline">Add Server</span>
+            <span className="text-[10px] font-mono opacity-70 hidden sm:inline">⌘N</span>
           </Button>
         </div>
       </header>
 
       {isImporting && (
-        <div className="border-b border-gray-200/30 bg-white/60 backdrop-blur-xl p-6 animate-in slide-in-from-top-2 duration-200">
-          <h3 className="text-sm font-medium mb-2">
+        <div className="border-b border-[var(--border-primary)] bg-[var(--bg-elevated)] backdrop-blur-xl p-4 sm:p-6 animate-in slide-in-from-top-2 duration-200">
+          <h3 className="text-sm font-medium text-[var(--text-primary)] mb-2">
             Import from JSON{' '}
             <button
               onClick={async () => {
@@ -617,16 +617,16 @@ function ManageServersView({
                 };
                 input.click();
               }}
-              className="text-blue-600 hover:text-blue-700 text-xs underline"
+              className="text-[var(--text-accent)] hover:opacity-80 text-xs underline"
             >
               (Import app data zip)
             </button>
           </h3>
-          <p className="text-xs text-gray-500 mb-3">
+          <p className="text-xs text-[var(--text-secondary)] mb-3">
             Paste a standard `mcpServers` configuration object.
           </p>
           <textarea
-            className="w-full h-32 font-mono text-xs p-3 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900/5 mb-3"
+            className="w-full h-32 font-mono text-xs p-3 rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--ring-focus)] mb-3"
             placeholder={
               '{\n  "mcpServers": {\n    "myserver": { "command": "...", "args": [...] }\n  }\n}'
             }
@@ -650,36 +650,36 @@ function ManageServersView({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="rounded-xl border border-gray-200/50 bg-white/70 backdrop-blur-xl shadow-sm overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-white/50 backdrop-blur-sm border-b border-gray-200/50 text-xs uppercase tracking-wider font-medium text-gray-500">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="rounded-xl border border-[var(--border-secondary)] bg-[var(--bg-tertiary)] backdrop-blur-xl shadow-[var(--shadow-sm)] overflow-hidden overflow-x-auto">
+          <table className="w-full text-left text-sm min-w-[600px]">
+            <thead className="bg-[var(--bg-hover)] backdrop-blur-sm border-b border-[var(--border-secondary)] text-xs uppercase tracking-wider font-medium text-[var(--text-secondary)]">
               <tr>
                 <th className="px-4 py-3 w-12 text-center">On</th>
                 <th className="px-4 py-3">Server</th>
-                <th className="px-4 py-3">Command</th>
+                <th className="px-4 py-3 hidden sm:table-cell">Command</th>
                 <th className="px-4 py-3 w-32">Apps</th>
                 <th className="px-4 py-3 w-16"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100/50">
+            <tbody className="divide-y divide-[var(--border-primary)]">
               {servers.map(server => (
-                <tr key={server.id} className="group hover:bg-white/50 transition-colors">
+                <tr key={server.id} className="group hover:bg-[var(--bg-hover)] transition-colors">
                   <td className="px-4 py-3 text-center">
                     <Switch checked={server.enabled} onChange={() => onToggle(server.id)} />
                   </td>
                   <td className="px-4 py-3 cursor-pointer" onClick={() => onSelect(server.id)}>
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="w-9 h-9 rounded-lg bg-[var(--bg-badge)] border border-[var(--border-input)] flex items-center justify-center overflow-hidden shrink-0">
                         <ServerIcon url={server.iconUrl} />
                       </div>
-                      <div>
-                        <div className="font-medium text-gray-900 flex items-center gap-2">
-                          {server.name}
-                          <ChevronRight className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="min-w-0">
+                        <div className="font-medium text-[var(--text-primary)] flex items-center gap-2">
+                          <span className="truncate">{server.name}</span>
+                          <ChevronRight className="w-3 h-3 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                         </div>
                         {server.description && (
-                          <div className="text-xs text-gray-500 truncate max-w-[200px]">
+                          <div className="text-xs text-[var(--text-secondary)] truncate max-w-[200px]">
                             {server.description}
                           </div>
                         )}
@@ -687,10 +687,10 @@ function ManageServersView({
                     </div>
                   </td>
                   <td
-                    className="px-4 py-3 font-mono text-xs text-gray-600 max-w-[300px] truncate cursor-pointer"
+                    className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)] max-w-[300px] truncate cursor-pointer hidden sm:table-cell"
                     onClick={() => onSelect(server.id)}
                   >
-                    <span className="text-blue-600">{server.command}</span> {(server.args || []).join(' ')}
+                    <span className="text-[var(--text-accent)]">{server.command}</span> {(server.args || []).join(' ')}
                   </td>
                   <td className="px-4 py-3 cursor-pointer" onClick={() => onSelect(server.id)}>
                     {server.enabled ? (
@@ -709,7 +709,7 @@ function ManageServersView({
                                 key={appName}
                                 src={app.icon}
                                 alt={app.name}
-                                className="w-5 h-5 rounded border border-gray-200/50"
+                                className="w-5 h-5 rounded border border-[var(--border-secondary)]"
                                 title={app.name}
                                 onError={e => (e.currentTarget.style.display = 'none')}
                               />
@@ -719,7 +719,7 @@ function ManageServersView({
                           const app = apps.find(a => a.name === appName);
                           return app && (app.syncEnabled !== false);
                         }).length > 3 && (
-                          <span className="text-xs text-gray-500 italic ml-1">
+                          <span className="text-xs text-[var(--text-secondary)] italic ml-1">
                             +{(server.apps || []).filter(appName => {
                               const app = apps.find(a => a.name === appName);
                               return app && (app.syncEnabled !== false);
@@ -728,7 +728,7 @@ function ManageServersView({
                         )}
                       </div>
                     ) : (
-                      <Badge className="bg-gray-100 text-gray-500">
+                      <Badge>
                         Inactive
                       </Badge>
                     )}
@@ -738,7 +738,7 @@ function ManageServersView({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="hover:text-red-600 hover:bg-red-50"
+                        className="hover:text-[var(--text-error)] hover:bg-[var(--btn-danger-bg)]"
                         onClick={e => {
                           e.stopPropagation();
                           onDelete(server.id);
@@ -832,46 +832,45 @@ function ServerDetailView({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white/20 backdrop-blur-xl animate-in slide-in-from-right-4 duration-300">
-      <header className="h-14 shrink-0 px-4 flex items-center gap-2 border-b border-gray-200/30 bg-white/50 backdrop-blur-xl sticky top-0 z-10">
+    <div className="flex flex-col h-full bg-[var(--bg-secondary)] backdrop-blur-xl animate-in slide-in-from-right-4 duration-300">
+      <header className="h-14 shrink-0 px-4 flex items-center gap-2 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] backdrop-blur-xl sticky top-0 z-10">
         <Button
           variant="ghost"
           size="sm"
-          className="-ml-2 text-gray-500 gap-2"
+          className="-ml-2 gap-2"
           onClick={onBack}
         >
           <ChevronLeft className="w-4 h-4" /> Servers
-          <span className="text-[10px] font-mono text-gray-400">
+          <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
             esc
           </span>
         </Button>
-        <span className="text-gray-300">/</span>
-        <div className="flex items-center gap-2 font-medium text-sm">
+        <span className="text-[var(--text-muted)]">/</span>
+        <div className="flex items-center gap-2 font-medium text-sm text-[var(--text-primary)]">
           <ServerIcon url={server.iconUrl} className="w-4 h-4" />
-          {server.name}
+          <span className="truncate">{server.name}</span>
         </div>
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto p-8 space-y-8">
-          <section className="bg-white/70 backdrop-blur-xl rounded-xl shadow-sm border border-gray-200/50 p-6 flex gap-6 items-start">
+        <div className="max-w-3xl mx-auto p-4 sm:p-8 space-y-8">
+          <section className="bg-[var(--bg-tertiary)] backdrop-blur-xl rounded-xl shadow-[var(--shadow-sm)] border border-[var(--border-secondary)] p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
             <button
               ref={iconButtonRef}
               onClick={() => setShowIconPicker(true)}
-              className="w-20 h-20 rounded-[18px] bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 hover:bg-gray-100 cursor-pointer transition-colors"
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-[18px] bg-[var(--bg-badge)] border border-[var(--border-input)] flex items-center justify-center overflow-hidden shrink-0 hover:bg-[var(--bg-hover)] cursor-pointer transition-colors"
             >
-              <ServerIcon url={isEditing ? editedIconUrl : server.iconUrl} className="w-10 h-10" />
+              <ServerIcon url={isEditing ? editedIconUrl : server.iconUrl} className="w-8 h-8 sm:w-10 sm:h-10" />
             </button>
-            <div className="flex-1 space-y-4">
+            <div className="flex-1 space-y-4 w-full">
               {!isEditing ? (
                 <div>
-                  <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-semibold text-gray-900">{server.name}</h1>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h1 className="text-xl sm:text-2xl font-semibold text-[var(--text-primary)]">{server.name}</h1>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="danger"
                         size="icon"
-                        className="hover:bg-red-200"
                         onClick={() => {
                           if (confirm(`Are you sure you want to delete "${server.name}"? This action cannot be undone.`)) {
                             onDelete(server.id);
@@ -896,7 +895,7 @@ function ServerDetailView({
                       </Button>
                     </div>
                   </div>
-                  <p className="text-gray-500 mt-1">
+                  <p className="text-[var(--text-secondary)] mt-1">
                     {server.description || 'No description provided.'}
                   </p>
                 </div>
@@ -932,9 +931,9 @@ function ServerDetailView({
               <div>
                 <Label>Command</Label>
                 {!isEditing ? (
-                  <div className="font-mono text-xs bg-white/70 backdrop-blur-sm text-gray-900 p-3 rounded-md overflow-x-auto flex items-center border border-gray-200/50">
-                    <span className="text-gray-400 mr-2">$</span>
-                    <span className="text-blue-600">{server.command}</span>
+                  <div className="font-mono text-xs bg-[var(--bg-code)] backdrop-blur-sm text-[var(--text-primary)] p-3 rounded-md overflow-x-auto flex items-center border border-[var(--border-secondary)]">
+                    <span className="text-[var(--text-tertiary)] mr-2">$</span>
+                    <span className="text-[var(--text-accent)]">{server.command}</span>
                     <span className="ml-2">{(server.args || []).join(' ')}</span>
                   </div>
                 ) : (
@@ -950,18 +949,18 @@ function ServerDetailView({
             </div>
           </section>
 
-          <div className="grid grid-cols-5 gap-8">
-            <div className="col-span-3 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
+            <div className="lg:col-span-3 space-y-6">
               <section>
-                <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                  <ShieldAlert className="w-4 h-4 text-gray-500" />
+                <h3 className="text-sm font-medium text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-[var(--text-secondary)]" />
                   Permissions
                 </h3>
-                <div className="bg-white/70 backdrop-blur-xl rounded-lg border border-gray-200/50 overflow-hidden">
-                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/40 transition-colors border-b border-gray-100/50 group">
+                <div className="bg-[var(--bg-tertiary)] backdrop-blur-xl rounded-lg border border-[var(--border-secondary)] overflow-hidden">
+                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-[var(--bg-hover)] transition-colors border-b border-[var(--border-primary)] group">
                     <div>
-                      <div className="font-medium text-sm text-gray-900">Always Ask</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="font-medium text-sm text-[var(--text-primary)]">Always Ask</div>
+                      <div className="text-xs text-[var(--text-secondary)]">
                         Prompt user before executing tools or accessing resources
                       </div>
                     </div>
@@ -973,13 +972,13 @@ function ServerDetailView({
                         onChange={() => onUpdate({ ...server, permissions: 'always_ask' })}
                         className="peer sr-only"
                       />
-                      <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-white transition-all peer-checked:border-gray-900 peer-checked:border-[6px] group-hover:border-gray-400 peer-checked:group-hover:border-gray-900" />
+                      <div className="w-5 h-5 rounded-full border-2 border-[var(--radio-unchecked)] bg-[var(--bg-input)] transition-all peer-checked:border-[var(--radio-checked)] peer-checked:border-[6px] group-hover:border-[var(--border-hover)] peer-checked:group-hover:border-[var(--radio-checked)]" />
                     </div>
                   </label>
-                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/40 transition-colors group">
+                  <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-[var(--bg-hover)] transition-colors group">
                     <div>
-                      <div className="font-medium text-sm text-gray-900">Allow without asking</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="font-medium text-sm text-[var(--text-primary)]">Allow without asking</div>
+                      <div className="text-xs text-[var(--text-secondary)]">
                         Automatically approve all requests from this server
                       </div>
                     </div>
@@ -991,26 +990,26 @@ function ServerDetailView({
                         onChange={() => onUpdate({ ...server, permissions: 'allow' })}
                         className="peer sr-only"
                       />
-                      <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-white transition-all peer-checked:border-gray-900 peer-checked:border-[6px] group-hover:border-gray-400 peer-checked:group-hover:border-gray-900" />
+                      <div className="w-5 h-5 rounded-full border-2 border-[var(--radio-unchecked)] bg-[var(--bg-input)] transition-all peer-checked:border-[var(--radio-checked)] peer-checked:border-[6px] group-hover:border-[var(--border-hover)] peer-checked:group-hover:border-[var(--radio-checked)]" />
                     </div>
                   </label>
                 </div>
               </section>
             </div>
 
-            <div className="col-span-2">
-              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                <AppWindow className="w-4 h-4 text-gray-500" />
+            <div className="lg:col-span-2">
+              <h3 className="text-sm font-medium text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                <AppWindow className="w-4 h-4 text-[var(--text-secondary)]" />
                 Application Sync
               </h3>
-              <div className="bg-white/70 backdrop-blur-xl rounded-lg border border-gray-200/50 overflow-hidden">
+              <div className="bg-[var(--bg-tertiary)] backdrop-blur-xl rounded-lg border border-[var(--border-secondary)] overflow-hidden">
                 <div 
-                  className="flex items-center justify-between p-3 border-b border-gray-200/50 cursor-pointer hover:bg-white/50 transition-colors"
+                  className="flex items-center justify-between p-3 border-b border-[var(--border-secondary)] cursor-pointer hover:bg-[var(--bg-hover)] transition-colors"
                   onClick={() => onUpdate({ ...server, applyToAll: !server.applyToAll })}
                 >
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">Apply to All</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-sm font-medium text-[var(--text-primary)]">Apply to All</div>
+                    <div className="text-xs text-[var(--text-secondary)]">
                       Sync to all applications automatically
                     </div>
                   </div>
@@ -1028,16 +1027,16 @@ function ServerDetailView({
                     <div
                       key={app.name}
                       className={cn(
-                        'flex items-center gap-3 p-3 border-b border-gray-100/50 last:border-0 transition-colors',
+                        'flex items-center gap-3 p-3 border-b border-[var(--border-primary)] last:border-0 transition-colors',
                         server.applyToAll ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
-                        isIncluded ? 'bg-white/50 hover:bg-white/70' : 'bg-white/20'
+                        isIncluded ? 'bg-[var(--bg-hover)]' : 'bg-transparent'
                       )}
                       onClick={() => !server.applyToAll && toggleAppInclusion(app.name)}
                     >
                       <img
                         src={app.icon}
                         className={cn(
-                          'w-8 h-8 rounded-md border border-gray-200/50 transition-all',
+                          'w-8 h-8 rounded-md border border-[var(--border-secondary)] transition-all',
                           isIncluded ? '' : 'grayscale opacity-70'
                         )}
                         onError={e => (e.currentTarget.src = '')}
@@ -1046,22 +1045,22 @@ function ServerDetailView({
                         <div
                           className={cn(
                             'text-sm font-medium',
-                            isIncluded ? 'text-gray-900' : 'text-gray-500'
+                            isIncluded ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
                           )}
                         >
                           {app.name}
                         </div>
                       </div>
                       {isIncluded ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <CheckCircle2 className="w-5 h-5 text-[var(--text-success)]" />
                       ) : (
-                        <XCircle className="w-5 h-5 text-gray-300" />
+                        <XCircle className="w-5 h-5 text-[var(--text-muted)]" />
                       )}
                     </div>
                   );
                 })}
               </div>
-              <p className="text-[11px] text-gray-500 mt-2 px-1">
+              <p className="text-[11px] text-[var(--text-secondary)] mt-2 px-1">
                 {server.applyToAll 
                   ? 'Server is synced to all applications. Disable "Apply to All" to select specific apps.'
                   : 'Click an application to toggle this server\'s availability for it.'}
@@ -1167,61 +1166,61 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
   };
 
   return (
-    <div className="flex flex-col h-full bg-white/20 backdrop-blur-xl animate-in fade-in duration-300">
-      <header className="h-14 shrink-0 px-6 flex items-center justify-between border-b border-gray-200/30 bg-white/40 backdrop-blur-xl">
-        <div>
-          <h2 className="text-sm font-semibold text-gray-900">
+    <div className="flex flex-col h-full bg-[var(--bg-secondary)] backdrop-blur-xl animate-in fade-in duration-300">
+      <header className="h-14 shrink-0 px-4 sm:px-6 flex items-center justify-between border-b border-[var(--border-primary)] bg-[var(--bg-primary)] backdrop-blur-xl">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Target Applications ({(apps || []).length})
           </h2>
-          <p className="text-xs text-gray-500">Manage MCP-compatible applications</p>
+          <p className="text-xs text-[var(--text-secondary)] truncate">Manage MCP-compatible applications</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1 sm:gap-2 shrink-0">
           <Button variant="secondary" size="sm" className="gap-1" onClick={handleSync}>
             <RefreshCw className="w-3.5 h-3.5" />
-            Sync All
+            <span className="hidden sm:inline">Sync All</span>
           </Button>
           <Button variant="secondary" size="sm" className="gap-1" onClick={onRefresh}>
             <RefreshCw className="w-3.5 h-3.5" />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>
       </header>
-      <div className="p-6 grid grid-cols-2 gap-4">
+      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
         {(apps || []).map(app => {
           const syncEnabled = appSyncStates.get(app.name) ?? true;
           return (
             <div
               key={app.name}
-              className="bg-white/70 backdrop-blur-xl rounded-xl border border-gray-200/50 p-5 shadow-sm flex gap-4 hover:shadow-md transition-all cursor-pointer"
+              className="bg-[var(--bg-tertiary)] backdrop-blur-xl rounded-xl border border-[var(--border-secondary)] p-4 sm:p-5 shadow-[var(--shadow-sm)] flex gap-4 hover:shadow-[var(--shadow-md)] transition-all cursor-pointer"
               onClick={() => setSelectedApp(app.name)}
             >
-              <div className="relative">
-                <div className="w-16 h-16 rounded-2xl border border-gray-200/50 flex items-center justify-center overflow-hidden bg-white shadow-sm">
+              <div className="relative shrink-0">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border border-[var(--border-secondary)] flex items-center justify-center overflow-hidden bg-[var(--bg-input)] shadow-[var(--shadow-sm)]">
                   <img
                     src={app.icon}
                     alt={app.name}
-                    className="w-10 h-10 object-contain"
+                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
                     onError={e =>
                       (e.currentTarget.src = 'https://placehold.co/40x40?text=' + app.name[0])
                     }
                   />
                 </div>
                 <div className={cn(
-                  "absolute -bottom-1 -right-1 w-5 h-5 border-[3px] border-white rounded-full",
-                  syncEnabled ? "bg-green-500" : "bg-gray-400"
+                  "absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 border-[3px] border-[var(--bg-tertiary)] rounded-full",
+                  syncEnabled ? "bg-[var(--switch-on)]" : "bg-[var(--text-muted)]"
                 )} />
               </div>
               <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-base font-medium text-gray-900">{app.name}</h3>
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <h3 className="text-base font-medium text-[var(--text-primary)] truncate">{app.name}</h3>
                   <Badge>Detected</Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     {syncEnabled ? 'Sync enabled' : 'Sync disabled'}
                   </p>
                   <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                    <span className="text-xs text-gray-600">Sync</span>
+                    <span className="text-xs text-[var(--text-secondary)] hidden sm:inline">Sync</span>
                     <Switch
                       checked={syncEnabled}
                       onChange={() => handleToggleSync(app.name, syncEnabled)}
@@ -1236,44 +1235,44 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
       
       {selectedApp && appDetails && (
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-8"
+          className="fixed inset-0 bg-[var(--bg-modal-overlay)] backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-8"
           onClick={() => setSelectedApp(null)}
         >
           <div 
-            className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+            className="bg-[var(--bg-modal)] backdrop-blur-xl rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--border-secondary)] max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">{selectedApp} Details</h2>
+            <div className="px-4 sm:px-6 py-4 border-b border-[var(--border-secondary)] flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">{selectedApp} Details</h2>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono text-gray-400">esc</span>
+                <span className="text-[10px] font-mono text-[var(--text-tertiary)]">esc</span>
                 <button
                   onClick={() => setSelectedApp(null)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
               <section>
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Applied MCP Servers</h3>
-                <div className="bg-white/70 rounded-lg border border-gray-200/50 divide-y divide-gray-100/50">
+                <h3 className="text-sm font-medium text-[var(--text-primary)] mb-3">Applied MCP Servers</h3>
+                <div className="bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-secondary)] divide-y divide-[var(--border-primary)]">
                   {appDetails.appliedServers.length === 0 ? (
-                    <div className="p-4 text-sm text-gray-500 italic text-center">
+                    <div className="p-4 text-sm text-[var(--text-secondary)] italic text-center">
                       No servers applied to this application
                     </div>
                   ) : (
                     appDetails.appliedServers.map(server => (
                       <div key={server.id} className="p-3 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[var(--bg-badge)] border border-[var(--border-input)] flex items-center justify-center overflow-hidden shrink-0">
                           <ServerIcon url={server.iconUrl} className="w-5 h-5" />
                         </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-sm text-gray-900">{server.name}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm text-[var(--text-primary)]">{server.name}</div>
                           {server.description && (
-                            <div className="text-xs text-gray-500">{server.description}</div>
+                            <div className="text-xs text-[var(--text-secondary)] truncate">{server.description}</div>
                           )}
                         </div>
                       </div>
@@ -1283,22 +1282,22 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
               </section>
               
               <section>
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Backup Settings</h3>
+                <h3 className="text-sm font-medium text-[var(--text-primary)] mb-3">Backup Settings</h3>
                 {appDetails.backup ? (
                   <SyntaxHighlightedText text={JSON.stringify(appDetails.backup, null, 2)} />
                 ) : (
-                  <div className="p-4 text-sm text-gray-500 italic bg-white/70 rounded-lg border border-gray-200/50">
+                  <div className="p-4 text-sm text-[var(--text-secondary)] italic bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-secondary)]">
                     No backup available
                   </div>
                 )}
               </section>
               
               <section>
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Current Settings</h3>
+                <h3 className="text-sm font-medium text-[var(--text-primary)] mb-3">Current Settings</h3>
                 {appDetails.current && Object.keys(appDetails.current).length > 0 ? (
                   <SyntaxHighlightedText text={JSON.stringify(appDetails.current, null, 2)} />
                 ) : (
-                  <div className="p-4 text-sm text-gray-500 italic bg-white/70 rounded-lg border border-gray-200/50">
+                  <div className="p-4 text-sm text-[var(--text-secondary)] italic bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-secondary)]">
                     No configuration found
                   </div>
                 )}
@@ -1580,13 +1579,13 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
   const currentServer = servers.find(s => s.id === selectedServer);
 
   return (
-    <div className="flex flex-col h-full bg-white/20 backdrop-blur-xl animate-in fade-in duration-300">
-      <header className="h-14 shrink-0 px-4 flex items-center gap-4 border-b border-gray-200/30 bg-white/40 backdrop-blur-xl">
+    <div className="flex flex-col h-full bg-[var(--bg-secondary)] backdrop-blur-xl animate-in fade-in duration-300">
+      <header className="h-14 shrink-0 px-4 flex items-center gap-2 sm:gap-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] backdrop-blur-xl flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-500">Server:</span>
+          <span className="text-sm font-medium text-[var(--text-secondary)] hidden sm:inline">Server:</span>
           <div className="relative">
             <select
-              className="pl-8 pr-8 py-1.5 h-9 text-sm bg-gray-50 border border-gray-200 rounded-md appearance-none font-medium outline-none focus:ring-2 focus:ring-gray-900/5"
+              className="pl-8 pr-8 py-1.5 h-9 text-sm bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] rounded-md appearance-none font-medium outline-none focus:ring-2 focus:ring-[var(--ring-focus)]"
               value={selectedServer}
               onChange={async e => {
                 const newServerId = e.target.value;
@@ -1610,11 +1609,11 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
             <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
               <ServerIcon url={currentServer?.iconUrl} className="w-4 h-4" />
             </div>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
           </div>
         </div>
 
-        <div className="h-6 w-px bg-gray-200 mx-2" />
+        <div className="h-6 w-px bg-[var(--border-primary)] mx-1 sm:mx-2 hidden sm:block" />
 
         <Button
           variant={isRunning ? 'danger' : 'primary'}
@@ -1628,39 +1627,39 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
           )}
           {isRunning ? 'Stop' : 'Start'}
           {!isRunning && (
-            <span className="text-[10px] font-mono opacity-70">
+            <span className="text-[10px] font-mono opacity-70 hidden sm:inline">
               ⏎
             </span>
           )}
         </Button>
 
         {isRunning ? (
-          <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--text-success)] bg-[var(--bg-success)] px-2.5 py-1 rounded-full border border-[var(--border-success)]">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--text-success)] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--switch-on)]"></span>
             </span>
-            Running on stdio
+            <span className="hidden sm:inline">Running on stdio</span>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
-            <div className="w-2 h-2 rounded-full bg-gray-400" />
-            Stopped
+          <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] bg-[var(--bg-badge)] px-2.5 py-1 rounded-full">
+            <div className="w-2 h-2 rounded-full bg-[var(--text-muted)]" />
+            <span className="hidden sm:inline">Stopped</span>
           </div>
         )}
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-64 bg-white/50 backdrop-blur-xl border-r border-gray-200/30 flex flex-col">
-          <div className="px-4 py-3 border-b border-gray-200/30 flex justify-between items-center">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Available Tools
+        <div className="w-48 sm:w-64 shrink-0 bg-[var(--bg-primary)] backdrop-blur-xl border-r border-[var(--border-primary)] flex flex-col">
+          <div className="px-4 py-3 border-b border-[var(--border-primary)] flex justify-between items-center">
+            <h3 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+              Tools
             </h3>
             <Badge>{tools.length}</Badge>
           </div>
           <div className="flex-1 overflow-y-auto py-2">
             {!isRunning && (
-              <div className="px-4 py-8 text-center text-sm text-gray-500 italic">
+              <div className="px-4 py-8 text-center text-sm text-[var(--text-secondary)] italic">
                 Start server to load tools
               </div>
             )}
@@ -1671,8 +1670,8 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                 className={cn(
                   'w-full text-left px-4 py-2 text-sm flex items-center gap-2 border-l-[3px] transition-colors',
                   selectedTool?.name === tool.name
-                    ? 'bg-blue-500/10 border-blue-500 text-blue-900'
-                    : 'border-transparent hover:bg-white/40 text-gray-700'
+                    ? 'bg-[var(--bg-info)] border-[var(--text-accent)] text-[var(--text-accent)]'
+                    : 'border-transparent hover:bg-[var(--bg-hover)] text-[var(--text-primary)]'
                 )}
               >
                 <TerminalSquare className="w-4 h-4 opacity-70" />
@@ -1682,16 +1681,16 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col bg-white/60 backdrop-blur-xl overflow-hidden">
-          <div className="border-b border-gray-200/30 px-4 flex items-center justify-between">
-            <div className="flex items-center gap-1">
+        <div className="flex-1 flex flex-col bg-[var(--bg-elevated)] backdrop-blur-xl overflow-hidden min-w-0">
+          <div className="border-b border-[var(--border-primary)] px-2 sm:px-4 flex items-center justify-between">
+            <div className="flex items-center gap-1 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('console')}
                 className={cn(
-                  'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                  'px-2 sm:px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
                   activeTab === 'console'
-                    ? 'border-gray-900 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-[var(--text-primary)] text-[var(--text-primary)]'
+                    : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
               >
                 Console
@@ -1700,16 +1699,16 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                 onClick={() => setActiveTab('parameters')}
                 disabled={!selectedTool}
                 className={cn(
-                  'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                  'px-2 sm:px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
                   activeTab === 'parameters'
-                    ? 'border-gray-900 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700',
+                    ? 'border-[var(--text-primary)] text-[var(--text-primary)]'
+                    : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
                   !selectedTool && 'opacity-40 cursor-not-allowed'
                 )}
               >
-                Parameters
+                Params
                 {selectedTool && (
-                  <span className="ml-2 font-mono text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                  <span className="ml-1 sm:ml-2 font-mono text-xs text-[var(--text-accent)] bg-[var(--bg-info)] px-1.5 py-0.5 rounded hidden sm:inline">
                     {selectedTool.name}
                   </span>
                 )}
@@ -1718,10 +1717,10 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                 onClick={() => setActiveTab('response')}
                 disabled={!lastResult}
                 className={cn(
-                  'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                  'px-2 sm:px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
                   activeTab === 'response'
-                    ? 'border-gray-900 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700',
+                    ? 'border-[var(--text-primary)] text-[var(--text-primary)]'
+                    : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
                   !lastResult && 'opacity-40 cursor-not-allowed'
                 )}
               >
@@ -1733,12 +1732,12 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                 size="sm"
                 variant="primary"
                 disabled={!isRunning || isExecuting || !areRequiredParametersFilled()}
-                className="gap-2"
+                className="gap-2 shrink-0"
                 onClick={handleRunTool}
               >
-                <Play className="w-3 h-3" /> {isExecuting ? 'Running...' : 'Run Tool'}
+                <Play className="w-3 h-3" /> {isExecuting ? 'Running...' : 'Run'}
                 {!isExecuting && (
-                  <span className="text-[10px] font-mono opacity-70">
+                  <span className="text-[10px] font-mono opacity-70 hidden sm:inline">
                     ⌘⏎
                   </span>
                 )}
@@ -1747,7 +1746,7 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
             {activeTab === 'response' && lastResult && (
               <button
                 onClick={() => setLastResult(null)}
-                className="text-xs text-gray-500 hover:text-gray-700"
+                className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 Clear
               </button>
@@ -1755,7 +1754,7 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
             {activeTab === 'console' && logs.length > 0 && (
               <button
                 onClick={() => setLogs([])}
-                className="text-xs text-gray-500 hover:text-gray-700"
+                className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 Clear
               </button>
@@ -1764,16 +1763,16 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
 
           <div className="flex-1 overflow-hidden">
             {activeTab === 'console' && (
-              <div className="h-full flex flex-col bg-white text-gray-900 overflow-hidden">
+              <div className="h-full flex flex-col bg-[var(--bg-code)] text-[var(--text-primary)] overflow-hidden">
                 <div className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1">
                   {logs.length === 0 && (
-                    <div className="text-gray-400 italic text-center py-8">
+                    <div className="text-[var(--text-tertiary)] italic text-center py-8">
                       No console output yet...
                     </div>
                   )}
                   {logs.map((log, i) => (
                     <div key={i} className="break-all leading-relaxed">
-                      <span className="text-gray-400 mr-2">{'>'}</span>
+                      <span className="text-[var(--text-tertiary)] mr-2">{'>'}</span>
                       {log}
                     </div>
                   ))}
@@ -1783,18 +1782,18 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
             )}
 
             {activeTab === 'parameters' && (
-              <div className="h-full overflow-y-auto p-6 space-y-4">
+              <div className="h-full overflow-y-auto p-4 sm:p-6 space-y-4">
                 {!selectedTool && (
-                  <div className="text-center text-sm text-gray-400 italic py-8">
+                  <div className="text-center text-sm text-[var(--text-tertiary)] italic py-8">
                     Select a tool to configure parameters
                   </div>
                 )}
                 {selectedTool && (!selectedTool.inputSchema?.properties || Object.keys(selectedTool.inputSchema.properties).length === 0) && (
-                  <div className="text-center text-sm text-gray-500 py-8">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-                      <CheckCircle2 className="w-6 h-6 text-gray-400" />
+                  <div className="text-center text-sm text-[var(--text-secondary)] py-8">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--bg-badge)] mb-3">
+                      <CheckCircle2 className="w-6 h-6 text-[var(--text-tertiary)]" />
                     </div>
-                    <div className="font-medium text-gray-700">No parameters required</div>
+                    <div className="font-medium text-[var(--text-primary)]">No parameters required</div>
                     <p className="text-xs mt-1">This tool can be executed without any input</p>
                   </div>
                 )}
@@ -1808,9 +1807,9 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
             )}
 
             {activeTab === 'response' && (
-              <div className="h-full overflow-y-auto p-6">
+              <div className="h-full overflow-y-auto p-4 sm:p-6">
                 {!lastResult && (
-                  <div className="text-center text-sm text-gray-400 italic py-8">
+                  <div className="text-center text-sm text-[var(--text-tertiary)] italic py-8">
                     Tool response will appear here after execution
                   </div>
                 )}
@@ -1819,37 +1818,37 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                     <div className={cn(
                       'rounded-lg border p-3 flex items-center gap-2',
                       lastResult.error 
-                        ? 'bg-red-50/70 backdrop-blur-sm border-red-200/50' 
-                        : 'bg-green-50/70 backdrop-blur-sm border-green-200/50'
+                        ? 'bg-[var(--btn-danger-bg)] backdrop-blur-sm border-[var(--border-error)]' 
+                        : 'bg-[var(--bg-success)] backdrop-blur-sm border-[var(--border-success)]'
                     )}>
                       {lastResult.error ? (
                         <>
-                          <XCircle className="w-5 h-5 text-red-600" />
-                          <span className="text-sm font-medium text-red-900">Error</span>
+                          <XCircle className="w-5 h-5 text-[var(--text-error)]" />
+                          <span className="text-sm font-medium text-[var(--text-error)]">Error</span>
                         </>
                       ) : (
                         <>
-                          <CheckCircle2 className="w-5 h-5 text-green-600" />
-                          <span className="text-sm font-medium text-green-900">Success</span>
+                          <CheckCircle2 className="w-5 h-5 text-[var(--text-success)]" />
+                          <span className="text-sm font-medium text-[var(--text-success)]">Success</span>
                         </>
                       )}
                     </div>
                     <div className="space-y-3">
                       {Array.isArray(lastResult.data) ? (
                         lastResult.data.map((item: any, idx: number) => (
-                          <div key={idx} className="bg-white/70 backdrop-blur-sm rounded-md p-3 border border-gray-200/50">
+                          <div key={idx} className="bg-[var(--bg-tertiary)] backdrop-blur-sm rounded-md p-3 border border-[var(--border-secondary)]">
                             {item.type === 'text' && (
                               <div>
-                                <div className="text-xs font-medium text-gray-500 mb-2">Text Content</div>
+                                <div className="text-xs font-medium text-[var(--text-secondary)] mb-2">Text Content</div>
                                 <SyntaxHighlightedText text={item.text} />
                               </div>
                             )}
                             {item.type === 'resource' && (
                               <div>
-                                <div className="text-xs font-medium text-gray-500 mb-2">Resource</div>
-                                <div className="text-sm text-gray-800">
+                                <div className="text-xs font-medium text-[var(--text-secondary)] mb-2">Resource</div>
+                                <div className="text-sm text-[var(--text-primary)]">
                                   <div className="font-medium mb-1">{item.resource?.uri}</div>
-                                  <pre className="text-xs whitespace-pre-wrap font-mono bg-gray-50 p-2 rounded max-h-[500px] overflow-y-auto">
+                                  <pre className="text-xs whitespace-pre-wrap font-mono bg-[var(--bg-code)] p-2 rounded max-h-[500px] overflow-y-auto">
                                     {item.resource?.text || JSON.stringify(item.resource, null, 2)}
                                   </pre>
                                 </div>
@@ -1857,7 +1856,7 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                             )}
                             {item.type === 'image' && (
                               <div>
-                                <div className="text-xs font-medium text-gray-500 mb-2">Image</div>
+                                <div className="text-xs font-medium text-[var(--text-secondary)] mb-2">Image</div>
                                 <img 
                                   src={`data:${item.mimeType};base64,${item.data}`} 
                                   alt="Tool result"
@@ -1866,14 +1865,14 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
                               </div>
                             )}
                             {!['text', 'resource', 'image'].includes(item.type) && (
-                              <pre className="text-xs text-gray-800 whitespace-pre-wrap font-mono max-h-[500px] overflow-y-auto">
+                              <pre className="text-xs text-[var(--text-primary)] whitespace-pre-wrap font-mono max-h-[500px] overflow-y-auto">
                                 {JSON.stringify(item, null, 2)}
                               </pre>
                             )}
                           </div>
                         ))
                       ) : (
-                        <div className="bg-white/70 backdrop-blur-sm rounded-md border border-gray-200/50 overflow-hidden">
+                        <div className="bg-[var(--bg-tertiary)] backdrop-blur-sm rounded-md border border-[var(--border-secondary)] overflow-hidden">
                           <SyntaxHighlightedText 
                             text={typeof lastResult.data === 'string' 
                               ? lastResult.data 
@@ -1895,14 +1894,14 @@ function StudioView({ servers }: { servers: MCPServerWithMetadata[] }) {
 
 function AboutView() {
   return (
-    <div className="flex flex-col h-full bg-white/20 backdrop-blur-xl animate-in fade-in duration-300">
-      <div className="flex-1 flex items-center justify-center p-12">
+    <div className="flex flex-col h-full bg-[var(--bg-secondary)] backdrop-blur-xl animate-in fade-in duration-300">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
         <div className="max-w-md w-full text-center space-y-8">
           <div className="flex justify-center">
             <img 
               src="/assets/logo.svg" 
               alt="MCP Manager" 
-              className="w-24 h-24 rounded-[24px] shadow-2xl ring-1 ring-gray-900/10"
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-[24px] shadow-[var(--shadow-xl)] ring-1 ring-[var(--border-secondary)]"
               onError={(e) => {
                 const div = document.createElement('div');
                 div.className = 'w-24 h-24 bg-gradient-to-br from-gray-800 via-gray-900 to-gray-950 rounded-[24px] flex items-center justify-center text-white shadow-2xl ring-1 ring-gray-900/10';
@@ -1913,33 +1912,33 @@ function AboutView() {
           </div>
           
           <div className="space-y-3">
-            <h1 className="text-3xl font-semibold text-gray-900">MCP Manager</h1>
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-sm rounded-full border border-gray-200/50">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-sm font-medium text-gray-700">Version 1.0.0</span>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-[var(--text-primary)]">MCP Manager</h1>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--bg-tertiary)] backdrop-blur-sm rounded-full border border-[var(--border-secondary)]">
+              <div className="w-2 h-2 rounded-full bg-[var(--switch-on)]" />
+              <span className="text-sm font-medium text-[var(--text-secondary)]">Version 1.0.0</span>
             </div>
           </div>
           
-          <div className="pt-6 border-t border-gray-200/30">
-            <p className="text-sm text-gray-600 mb-3">
+          <div className="pt-6 border-t border-[var(--border-primary)]">
+            <p className="text-sm text-[var(--text-secondary)] mb-3">
               A beautiful tool for managing Model Context Protocol servers across all your AI applications
             </p>
             <a
               href="https://github.com/explosion-scratch"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 transition-colors group"
+              className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors group"
             >
               Made by
-              <span className="font-medium text-blue-600 group-hover:text-blue-700 underline underline-offset-2">
+              <span className="font-medium text-[var(--text-accent)] group-hover:opacity-80 underline underline-offset-2">
                 @Explosion-Scratch
               </span>
             </a>
           </div>
           
           <div className="pt-4">
-            <p className="text-xs text-gray-400">
-              Press <kbd className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">esc</kbd> to return
+            <p className="text-xs text-[var(--text-tertiary)]">
+              Press <kbd className="px-2 py-1 bg-[var(--bg-badge)] border border-[var(--border-input)] rounded text-[10px] font-mono">esc</kbd> to return
             </p>
           </div>
         </div>

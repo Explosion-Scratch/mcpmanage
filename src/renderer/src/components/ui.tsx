@@ -11,10 +11,10 @@ export const Button = React.forwardRef<
   }
 >(({ className, variant = 'secondary', size = 'md', children, ...props }, ref) => {
   const variants = {
-    primary: 'bg-gray-900 text-white hover:bg-gray-800 shadow-sm border-transparent',
-    secondary: 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200 shadow-sm',
-    ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 border-transparent',
-    danger: 'bg-red-50 text-red-600 hover:bg-red-100 border-red-100',
+    primary: 'bg-[var(--btn-primary-bg)] text-[var(--text-on-primary)] hover:bg-[var(--btn-primary-hover)] shadow-[var(--shadow-sm)] border-transparent',
+    secondary: 'bg-[var(--btn-secondary-bg)] text-[var(--text-secondary)] hover:bg-[var(--btn-secondary-hover)] border-[var(--border-input)] shadow-[var(--shadow-sm)]',
+    ghost: 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--btn-ghost-hover)] border-transparent',
+    danger: 'bg-[var(--btn-danger-bg)] text-[var(--text-error)] hover:bg-[var(--btn-danger-hover)] border-[var(--border-error)]',
   };
   const sizes = {
     sm: 'h-7 px-2 text-xs',
@@ -26,7 +26,7 @@ export const Button = React.forwardRef<
     <button
       ref={ref}
       className={cn(
-        'inline-flex items-center justify-center rounded-md border font-medium transition-all focus:outline-none focus:ring-2 focus:ring-gray-900/10 disabled:opacity-50 disabled:pointer-events-none',
+        'inline-flex items-center justify-center rounded-md border font-medium transition-all focus:outline-none focus:ring-2 focus:ring-[var(--ring-focus)] disabled:opacity-50 disabled:pointer-events-none',
         variants[variant],
         sizes[size],
         className
@@ -39,6 +39,7 @@ export const Button = React.forwardRef<
 });
 Button.displayName = 'Button';
 
+
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
@@ -47,7 +48,7 @@ export const Input = React.forwardRef<
     ref={ref}
     spellCheck={spellCheck}
     className={cn(
-      'flex h-8 w-full rounded-md border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50',
+      'flex h-8 w-full rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] px-3 py-1 text-sm text-[var(--text-primary)] shadow-[var(--shadow-sm)] transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-[var(--text-tertiary)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--ring-focus)] disabled:cursor-not-allowed disabled:opacity-50',
       className
     )}
     {...props}
@@ -62,7 +63,7 @@ export const Label = ({
   children: React.ReactNode;
   className?: string;
 }) => (
-  <label className={cn('text-xs font-medium text-gray-700 mb-1.5 block', className)}>
+  <label className={cn('text-xs font-medium text-[var(--text-secondary)] mb-1.5 block', className)}>
     {children}
   </label>
 );
@@ -84,14 +85,14 @@ export const Switch = ({
     onClick={() => !disabled && onChange(!checked)}
     className={cn(
       'relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-      checked ? 'bg-green-500' : 'bg-gray-200',
+      checked ? 'bg-[var(--switch-on)]' : 'bg-[var(--switch-off)]',
       disabled && 'opacity-50 cursor-not-allowed'
     )}
   >
     <span
       aria-hidden="true"
       className={cn(
-        'pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+        'pointer-events-none inline-block h-3 w-3 transform rounded-full bg-[var(--switch-knob)] shadow ring-0 transition duration-200 ease-in-out',
         checked ? 'translate-x-3' : 'translate-x-0'
       )}
     />
@@ -107,7 +108,7 @@ export const Badge = ({
 }) => (
   <span
     className={cn(
-      'inline-flex items-center rounded-md bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600',
+      'inline-flex items-center rounded-md bg-[var(--bg-badge)] px-1.5 py-0.5 text-xs font-medium text-[var(--text-secondary)]',
       className
     )}
   >
@@ -122,12 +123,10 @@ export const ServerIcon = ({
   url?: string;
   className?: string;
 }) => {
-  // Check if it's an iconify icon name (e.g., 'ph:gear')
   if (url && url.includes(':')) {
-    return <IconifyIcon icon={url} className={cn('w-5 h-5 opacity-40', className)} />;
+    return <IconifyIcon icon={url} className={cn('w-5 h-5 opacity-40 text-[var(--text-secondary)]', className)} />;
   }
   
-  // Otherwise treat it as a URL
   if (url) {
     return (
       <img
@@ -138,7 +137,7 @@ export const ServerIcon = ({
       />
     );
   }
-  return <Box className={cn('w-5 h-5 text-gray-400 opacity-40', className)} />;
+  return <Box className={cn('w-5 h-5 text-[var(--text-tertiary)] opacity-40', className)} />;
 };
 
 interface IconPickerProps {
@@ -225,18 +224,18 @@ export const IconPicker = ({ value, onChange, onClose, anchorEl }: IconPickerPro
         onClick={onClose}
       />
       <div 
-        className="fixed z-50 bg-white rounded-lg shadow-2xl border border-gray-200 w-80 max-h-96 flex flex-col"
+        className="fixed z-50 bg-[var(--bg-modal)] backdrop-blur-xl rounded-lg shadow-[var(--shadow-xl)] border border-[var(--border-secondary)] w-80 max-h-96 flex flex-col"
         style={pickerStyle}
       >
-        <div className="p-3 border-b border-gray-200">
+        <div className="p-3 border-b border-[var(--border-primary)]">
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-tertiary)]" />
             <input
               type="text"
               placeholder="Search icons..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900/10"
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-primary)] rounded focus:outline-none focus:ring-1 focus:ring-[var(--ring-focus)]"
               autoFocus
             />
           </div>
@@ -252,27 +251,27 @@ export const IconPicker = ({ value, onChange, onClose, anchorEl }: IconPickerPro
                   key={icon}
                   onClick={() => setSelectedIcon(icon)}
                   className={cn(
-                    'aspect-square rounded border transition-all flex items-center justify-center hover:bg-gray-50',
+                    'aspect-square rounded border transition-all flex items-center justify-center hover:bg-[var(--bg-hover)]',
                     isSelected
-                      ? 'border-gray-900 bg-gray-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-[var(--text-primary)] bg-[var(--bg-hover)]'
+                      : 'border-[var(--border-input)] hover:border-[var(--border-hover)]'
                   )}
                   title={icon}
                 >
-                  <IconifyIcon icon={iconName} className="w-4 h-4 text-gray-700 opacity-80" />
+                  <IconifyIcon icon={iconName} className="w-4 h-4 text-[var(--text-primary)] opacity-80" />
                 </button>
               );
             })}
           </div>
           {filteredIcons.length === 0 && (
-            <div className="text-center py-8 text-xs text-gray-400">
+            <div className="text-center py-8 text-xs text-[var(--text-tertiary)]">
               <p>No icons found</p>
             </div>
           )}
         </div>
         
-        <div className="p-2 border-t border-gray-200 flex items-center justify-between">
-          <div className="text-xs text-gray-500">
+        <div className="p-2 border-t border-[var(--border-primary)] flex items-center justify-between">
+          <div className="text-xs text-[var(--text-secondary)]">
             {selectedIcon ? (
               <div className="flex items-center gap-1.5">
                 <IconifyIcon icon={`ph:${selectedIcon}-light`} className="w-3.5 h-3.5 opacity-40" />
