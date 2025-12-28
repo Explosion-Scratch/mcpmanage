@@ -226,7 +226,32 @@ function setupIPCHandlers() {
   ipcMain.handle('sync-servers', async () => {
     const appServers = await mcpManager.getAllServers();
     await masterStore.syncFromAppConfigs(appServers);
-    return await masterStore.getAllServers();
+    
+    const allServers = await masterStore.getAllServers();
+    for (const server of allServers) {
+      if (server.applyToAll && server.enabled) {
+        const syncedApps = appAdapters
+          .filter(a => appSyncStates.get(a.name) ?? true)
+          .map(a => a.name);
+        
+        for (const appName of syncedApps) {
+          const adapter = appAdapters.find(a => a.name === appName);
+          if (adapter) {
+            const appConfig = await mcpManager.readAppConfig(adapter);
+            appConfig[server.id] = {
+              command: server.command,
+              args: server.args,
+              env: server.env,
+              settings: server.settings,
+              enabled: true
+            };
+            await mcpManager.writeAppConfig(adapter, appConfig);
+          }
+        }
+      }
+    }
+    
+    return allServers;
   });
 
   ipcMain.handle('get-master-servers', async () => {
@@ -234,7 +259,35 @@ function setupIPCHandlers() {
   });
 
   ipcMain.handle('update-master-server', async (_, id: string, updates: Partial<MasterMCPServer>) => {
-    return await masterStore.updateServer(id, updates);
+    const result = await masterStore.updateServer(id, updates);
+    
+    if (result && updates.applyToAll !== undefined) {
+      const server = await masterStore.getServer(id);
+      if (server) {
+        const syncedApps = appAdapters
+          .filter(a => appSyncStates.get(a.name) ?? true)
+          .map(a => a.name);
+        
+        if (updates.applyToAll && server.enabled) {
+          for (const appName of syncedApps) {
+            const adapter = appAdapters.find(a => a.name === appName);
+            if (adapter) {
+              const appConfig = await mcpManager.readAppConfig(adapter);
+              appConfig[server.id] = {
+                command: server.command,
+                args: server.args,
+                env: server.env,
+                settings: server.settings,
+                enabled: true
+              };
+              await mcpManager.writeAppConfig(adapter, appConfig);
+            }
+          }
+        }
+      }
+    }
+    
+    return result;
   });
 
   ipcMain.handle('studio:start-server', async (_, serverId: string) => {
@@ -310,7 +363,7 @@ function setupIPCHandlers() {
 
   ipcMain.handle('get-app-applied-servers', async (_, appName: string) => {
     const allServers = await masterStore.getAllServers();
-    return allServers.filter(s => s.apps.includes(appName));
+    return allServers.filter(s => s.applyToAll || s.apps.includes(appName));
   });
 
   ipcMain.handle('export-app-data', async () => {

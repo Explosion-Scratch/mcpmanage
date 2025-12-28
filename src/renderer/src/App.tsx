@@ -156,6 +156,7 @@ export default function MCPManager() {
         env: updatedServer.env,
         permissions: updatedServer.permissions,
         apps: updatedServer.apps,
+        applyToAll: updatedServer.applyToAll,
       }
     );
     if (success) {
@@ -1003,19 +1004,35 @@ function ServerDetailView({
                 Application Sync
               </h3>
               <div className="bg-white/70 backdrop-blur-xl rounded-lg border border-gray-200/50 overflow-hidden">
+                <div 
+                  className="flex items-center justify-between p-3 border-b border-gray-200/50 cursor-pointer hover:bg-white/50 transition-colors"
+                  onClick={() => onUpdate({ ...server, applyToAll: !server.applyToAll })}
+                >
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">Apply to All</div>
+                    <div className="text-xs text-gray-500">
+                      Sync to all applications automatically
+                    </div>
+                  </div>
+                  <Switch
+                    checked={server.applyToAll ?? false}
+                    onChange={() => onUpdate({ ...server, applyToAll: !server.applyToAll })}
+                  />
+                </div>
                 {(apps || []).filter(app => {
                   const syncEnabled = appSyncStates.get(app.name) ?? true;
                   return syncEnabled;
                 }).map(app => {
-                  const isIncluded = (server.apps || []).includes(app.name);
+                  const isIncluded = server.applyToAll || (server.apps || []).includes(app.name);
                   return (
                     <div
                       key={app.name}
                       className={cn(
-                        'flex items-center gap-3 p-3 border-b border-gray-100/50 last:border-0 transition-colors cursor-pointer',
+                        'flex items-center gap-3 p-3 border-b border-gray-100/50 last:border-0 transition-colors',
+                        server.applyToAll ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
                         isIncluded ? 'bg-white/50 hover:bg-white/70' : 'bg-white/20'
                       )}
-                      onClick={() => toggleAppInclusion(app.name)}
+                      onClick={() => !server.applyToAll && toggleAppInclusion(app.name)}
                     >
                       <img
                         src={app.icon}
@@ -1045,7 +1062,9 @@ function ServerDetailView({
                 })}
               </div>
               <p className="text-[11px] text-gray-500 mt-2 px-1">
-                Click an application to toggle this server's availability for it.
+                {server.applyToAll 
+                  ? 'Server is synced to all applications. Disable "Apply to All" to select specific apps.'
+                  : 'Click an application to toggle this server\'s availability for it.'}
               </p>
             </div>
           </div>
@@ -1107,6 +1126,18 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
     } else {
       setAppDetails(null);
     }
+  }, [selectedApp]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedApp && e.key === 'Escape') {
+        e.preventDefault();
+        setSelectedApp(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedApp]);
 
   const handleSync = async () => {
@@ -1214,12 +1245,15 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
           >
             <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">{selectedApp} Details</h2>
-              <button
-                onClick={() => setSelectedApp(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono text-gray-400">esc</span>
+                <button
+                  onClick={() => setSelectedApp(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6">

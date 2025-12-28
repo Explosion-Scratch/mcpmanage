@@ -37,6 +37,7 @@ export interface MasterMCPServer extends MCPServer {
   enabled: boolean;
   permissions: PermissionLevel;
   apps: string[];
+  applyToAll?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -49,5 +50,6 @@ export interface MCPServerWithMetadata extends MCPServer {
   iconUrl?: string;
   permissions: PermissionLevel;
   apps: string[];
+  applyToAll?: boolean;
 }
 
