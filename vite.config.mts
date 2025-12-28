@@ -9,7 +9,7 @@ export default defineConfig({
   ],
   base: './',
   build: {
-    outDir: 'dist/renderer',
+    outDir: '../../dist/renderer',
     emptyOutDir: true,
   },
   root: 'src/renderer',
