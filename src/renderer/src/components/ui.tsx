@@ -82,7 +82,10 @@ export const Switch = ({
     role="switch"
     aria-checked={checked}
     disabled={disabled}
-    onClick={() => !disabled && onChange(!checked)}
+    onClick={(e) => {
+      e.stopPropagation();
+      if (!disabled) onChange(!checked);
+    }}
     className={cn(
       'relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
       checked ? 'bg-[var(--switch-on)]' : 'bg-[var(--switch-off)]',
