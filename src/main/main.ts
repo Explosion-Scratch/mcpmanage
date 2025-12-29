@@ -262,9 +262,6 @@ function setupIPCHandlers() {
   });
 
   ipcMain.handle('sync-servers', async () => {
-    const appServers = await mcpManager.getAllServers();
-    await masterStore.syncFromAppConfigs(appServers);
-    
     const allServers = await masterStore.getAllServers();
     for (const server of allServers) {
       if (server.applyToAll && server.enabled) {
