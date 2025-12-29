@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { MCPServers } from '../../shared/types';
+import { MCPServer, MCPServers } from '../../shared/types';
 import { AppAdapter } from './AppAdapter';
 import { FileService } from '../services/FileService';
 import path from 'path';
@@ -11,7 +11,7 @@ export class VSCodeAdapter implements AppAdapter {
   color = '#007acc';
   
   getPath(): string {
-    return path.join(os.homedir(), 'Library/Application Support/Code/User/globalStorage/mcp.json');
+    return path.join(os.homedir(), 'Library/Application Support/Code/User/mcp.json');
   }
   
   async configExists(): Promise<boolean> {
@@ -21,10 +21,42 @@ export class VSCodeAdapter implements AppAdapter {
   
   async getServers(): Promise<MCPServers> {
     const data = await FileService.readJSON(this.getPath());
-    if (!data || !data.mcpServers) {
+    if (!data || !data.servers) {
       return {};
     }
-    return data.mcpServers;
+    
+    const servers: MCPServers = {};
+    for (const [key, value] of Object.entries(data.servers)) {
+      const vsServer = value as any;
+      if (vsServer.command) {
+        servers[key] = {
+          command: vsServer.command,
+          args: vsServer.args || [],
+          env: vsServer.env,
+          settings: {
+            type: vsServer.type,
+            url: vsServer.url,
+            headers: vsServer.headers,
+            gallery: vsServer.gallery,
+            version: vsServer.version,
+          },
+        };
+      } else if (vsServer.type === 'http' && vsServer.url) {
+        servers[key] = {
+          command: '',
+          args: [],
+          settings: {
+            type: vsServer.type,
+            url: vsServer.url,
+            headers: vsServer.headers,
+            gallery: vsServer.gallery,
+            version: vsServer.version,
+          },
+        };
+      }
+    }
+    
+    return servers;
   }
   
   async setServers(servers: MCPServers): Promise<boolean> {
@@ -32,7 +64,38 @@ export class VSCodeAdapter implements AppAdapter {
     if (!data) {
       data = {};
     }
-    data.mcpServers = servers;
+    
+    const existingServers = data.servers || {};
+    const transformedServers: Record<string, any> = {};
+    
+    for (const [key, server] of Object.entries(servers)) {
+      if (server.settings?.type === 'http' && server.settings?.url) {
+        transformedServers[key] = {
+          type: server.settings.type,
+          url: server.settings.url,
+          ...(server.settings.headers && { headers: server.settings.headers }),
+          ...(server.settings.gallery && { gallery: server.settings.gallery }),
+          ...(server.settings.version && { version: server.settings.version }),
+        };
+      } else if (server.command) {
+        transformedServers[key] = {
+          command: server.command,
+          args: server.args || [],
+          ...(server.env && { env: server.env }),
+        };
+      }
+    }
+    
+    for (const [key, value] of Object.entries(existingServers)) {
+      if (!transformedServers[key]) {
+        const existing = value as any;
+        if (existing.type === 'http' || existing.gallery) {
+          transformedServers[key] = existing;
+        }
+      }
+    }
+    
+    data.servers = transformedServers;
     return await FileService.writeJSON(this.getPath(), data);
   }
 }

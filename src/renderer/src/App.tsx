@@ -22,6 +22,7 @@ import {
   Upload,
   Info,
   X,
+  Copy,
 } from 'lucide-react';
 import hljs from 'highlight.js/lib/core';
 import json from 'highlight.js/lib/languages/json';
@@ -586,6 +587,17 @@ function ManageServersView({
             <span className="text-[10px] font-mono text-[var(--text-tertiary)] hidden sm:inline">⌘I</span>
           </Button>
           <Button
+            variant="ghost"
+            size="icon"
+            onClick={async () => {
+              await window.electronAPI.syncServers();
+              onRefresh();
+            }}
+            title="Sync all servers to apps"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </Button>
+          <Button
             variant="primary"
             size="sm"
             className="gap-2"
@@ -898,6 +910,23 @@ function ServerDetailView({
                         <Pencil className="w-3 h-3" />
                         Edit
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const serverConfig = {
+                            [server.id]: {
+                              command: server.command,
+                              args: server.args || [],
+                              ...(server.env && { env: server.env }),
+                            }
+                          };
+                          navigator.clipboard.writeText(JSON.stringify(serverConfig, null, 2));
+                        }}
+                        title="Copy as JSON"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
                   <p className="text-[var(--text-secondary)] mt-1">
@@ -1103,6 +1132,13 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
     backup: any;
     current: any;
   } | null>(null);
+  const [isAddingCustomApp, setIsAddingCustomApp] = useState(false);
+  const [customAppName, setCustomAppName] = useState('');
+  const [customAppIcon, setCustomAppIcon] = useState('');
+  const [customAppDescription, setCustomAppDescription] = useState('');
+  const [customAppPath, setCustomAppPath] = useState('');
+  const [customAppFormat, setCustomAppFormat] = useState<'json' | 'toml'>('json');
+  const [customAppKey, setCustomAppKey] = useState('mcpServers');
 
   useEffect(() => {
     const loadSyncStates = async () => {
@@ -1137,12 +1173,15 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
       if (selectedApp && e.key === 'Escape') {
         e.preventDefault();
         setSelectedApp(null);
+      } else if (isAddingCustomApp && e.key === 'Escape') {
+        e.preventDefault();
+        setIsAddingCustomApp(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedApp]);
+  }, [selectedApp, isAddingCustomApp]);
 
   const handleSync = async () => {
     await window.electronAPI.syncServers();
@@ -1151,7 +1190,6 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
 
   const handleToggleSync = async (appName: string, currentState: boolean) => {
     if (currentState) {
-      // Turning sync off - show confirmation
       const hasBackup = await window.electronAPI.hasAppBackup(appName);
       if (hasBackup) {
         const confirmed = confirm(
@@ -1165,8 +1203,47 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
     setAppSyncStates(prev => new Map(prev).set(appName, !currentState));
     
     if (!currentState) {
-      // If turning sync back on, refresh to re-sync
       await handleSync();
+    }
+  };
+
+  const handleAddCustomApp = async () => {
+    if (!customAppName || !customAppPath) return;
+    
+    const customApp = {
+      id: customAppName.toLowerCase().replace(/\s+/g, '-'),
+      name: customAppName,
+      icon: customAppIcon || 'ph:puzzle-piece-light',
+      color: '#888888',
+      description: customAppDescription || undefined,
+      configPath: customAppPath,
+      configFormat: customAppFormat,
+      configKey: customAppKey,
+    };
+    
+    await window.electronAPI.addCustomApp(customApp);
+    setIsAddingCustomApp(false);
+    setCustomAppName('');
+    setCustomAppIcon('');
+    setCustomAppDescription('');
+    setCustomAppPath('');
+    setCustomAppFormat('json');
+    setCustomAppKey('mcpServers');
+    onRefresh();
+  };
+
+  const handleRemoveCustomApp = async (e: React.MouseEvent, appName: string) => {
+    e.stopPropagation();
+    const app = apps.find(a => a.name === appName);
+    if (!app?.isCustom) return;
+    
+    if (confirm(`Remove custom app "${appName}"? This will not delete the config file.`)) {
+      const customApps = await window.electronAPI.getCustomApps();
+      const customApp = customApps.find((a: any) => a.name === appName);
+      if (customApp) {
+        await window.electronAPI.removeCustomApp(customApp.id);
+        onRefresh();
+      }
     }
   };
 
@@ -1187,6 +1264,10 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
           <Button variant="secondary" size="sm" className="gap-1" onClick={onRefresh}>
             <RefreshCw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Refresh</span>
+          </Button>
+          <Button variant="primary" size="sm" className="gap-1" onClick={() => setIsAddingCustomApp(true)}>
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Add Custom</span>
           </Button>
         </div>
       </header>
@@ -1218,7 +1299,20 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
               <div className="flex-1 min-w-0 flex flex-col justify-center">
                 <div className="flex items-center justify-between mb-2 gap-2">
                   <h3 className="text-base font-medium text-[var(--text-primary)] truncate">{app.name}</h3>
-                  <Badge>Detected</Badge>
+                  <div className="flex items-center gap-1">
+                    {app.isCustom && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-6 h-6 hover:text-[var(--text-error)] hover:bg-[var(--btn-danger-bg)]"
+                        onClick={(e) => handleRemoveCustomApp(e, app.name)}
+                        title="Remove custom app"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                    <Badge>{app.isCustom ? 'Custom' : 'Detected'}</Badge>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-[var(--text-secondary)]">
@@ -1237,6 +1331,106 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
           );
         })}
       </div>
+      
+      {isAddingCustomApp && (
+        <div 
+          className="fixed inset-0 bg-[var(--bg-modal-overlay)] backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-8"
+          onClick={() => setIsAddingCustomApp(false)}
+        >
+          <div 
+            className="bg-[var(--bg-modal)] backdrop-blur-xl rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--border-secondary)] max-w-lg w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 sm:px-6 py-4 border-b border-[var(--border-secondary)] flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Add Custom Application</h2>
+              <button
+                onClick={() => setIsAddingCustomApp(false)}
+                className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4 sm:p-6 space-y-4">
+              <div>
+                <Label>Application Name *</Label>
+                <Input
+                  value={customAppName}
+                  onChange={(e) => setCustomAppName(e.target.value)}
+                  placeholder="My Custom App"
+                  autoFocus
+                />
+              </div>
+              
+              <div>
+                <Label>Icon URL</Label>
+                <Input
+                  value={customAppIcon}
+                  onChange={(e) => setCustomAppIcon(e.target.value)}
+                  placeholder="https://example.com/icon.png or ph:icon-name"
+                />
+              </div>
+              
+              <div>
+                <Label>Description</Label>
+                <Input
+                  value={customAppDescription}
+                  onChange={(e) => setCustomAppDescription(e.target.value)}
+                  placeholder="Optional description"
+                />
+              </div>
+              
+              <div>
+                <Label>Config File Path *</Label>
+                <Input
+                  value={customAppPath}
+                  onChange={(e) => setCustomAppPath(e.target.value)}
+                  placeholder="~/.myapp/config.json"
+                  className="font-mono text-xs"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Config Format</Label>
+                  <select
+                    value={customAppFormat}
+                    onChange={(e) => setCustomAppFormat(e.target.value as 'json' | 'toml')}
+                    className="w-full h-8 px-3 text-sm border border-[var(--border-input)] bg-[var(--bg-input)] rounded-md text-[var(--text-primary)]"
+                  >
+                    <option value="json">JSON</option>
+                    <option value="toml">TOML</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Config Key</Label>
+                  <Input
+                    value={customAppKey}
+                    onChange={(e) => setCustomAppKey(e.target.value)}
+                    placeholder="mcpServers"
+                    className="font-mono text-xs"
+                  />
+                </div>
+              </div>
+              
+              <p className="text-xs text-[var(--text-secondary)]">
+                Config Key is the JSON/TOML path where servers are stored (e.g., "mcpServers", "servers", "mcp.servers")
+              </p>
+            </div>
+            
+            <div className="px-4 sm:px-6 py-4 border-t border-[var(--border-secondary)] flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setIsAddingCustomApp(false)}>Cancel</Button>
+              <Button 
+                variant="primary" 
+                onClick={handleAddCustomApp}
+                disabled={!customAppName || !customAppPath}
+              >
+                Add Application
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {selectedApp && appDetails && (
         <div 
@@ -1314,6 +1508,7 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
     </div>
   );
 }
+
 
 
 interface Tool {

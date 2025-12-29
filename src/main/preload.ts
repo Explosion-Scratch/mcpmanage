@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import { CustomAppConfig } from '../shared/types';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getApps: () => ipcRenderer.invoke('get-apps'),
@@ -35,5 +36,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAppAppliedServers: (appName: string) => ipcRenderer.invoke('get-app-applied-servers', appName),
   exportAppData: () => ipcRenderer.invoke('export-app-data'),
   importAppDataZip: (zipBuffer: ArrayBuffer) => ipcRenderer.invoke('import-app-data-zip', Buffer.from(zipBuffer)),
+  
+  getCustomApps: () => ipcRenderer.invoke('get-custom-apps'),
+  addCustomApp: (app: CustomAppConfig) => ipcRenderer.invoke('add-custom-app', app),
+  removeCustomApp: (id: string) => ipcRenderer.invoke('remove-custom-app', id),
 });
-

@@ -1,4 +1,4 @@
-import { AppConfig, MCPServer, MCPServers, ParsedCommand, MasterMCPServer } from '../shared/types';
+import { AppConfig, MCPServer, MCPServers, ParsedCommand, MasterMCPServer, CustomAppConfig } from '../shared/types';
 
 interface MCPTool {
   name: string;
@@ -45,8 +45,11 @@ declare global {
       getAppBackup: (appName: string) => Promise<any>;
       getAppCurrentConfig: (appName: string) => Promise<any>;
       getAppAppliedServers: (appName: string) => Promise<MasterMCPServer[]>;
-      exportAppData: () => Promise<Buffer>;
+      exportAppData: () => Promise<Uint8Array>;
       importAppDataZip: (zipBuffer: ArrayBuffer) => Promise<boolean>;
+      getCustomApps: () => Promise<CustomAppConfig[]>;
+      addCustomApp: (app: CustomAppConfig) => Promise<boolean>;
+      removeCustomApp: (id: string) => Promise<boolean>;
     };
   }
 }

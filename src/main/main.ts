@@ -6,8 +6,9 @@ import { MCPConfigManager } from './services/MCPConfigManager';
 import { MasterServerStore } from './services/MasterServerStore';
 import { MCPStudioService } from './services/MCPStudioService';
 import { BackupService } from './services/BackupService';
-import { AppConfig, MCPServer, MasterMCPServer, PermissionLevel } from '../shared/types';
-import { getAvailableAdapters, AppAdapter } from './apps';
+import { CustomAppStore } from './services/CustomAppStore';
+import { AppConfig, MCPServer, MasterMCPServer, PermissionLevel, CustomAppConfig } from '../shared/types';
+import { getAvailableAdapters, AppAdapter, initCustomAppStore, CustomAppAdapter } from './apps';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -23,6 +24,7 @@ let mcpManager: MCPConfigManager;
 let masterStore: MasterServerStore;
 let mcpStudioService: MCPStudioService;
 let backupService: BackupService;
+let customAppStore: CustomAppStore;
 let appAdapters: AppAdapter[] = [];
 let appSyncStates: Map<string, boolean> = new Map();
 
@@ -82,6 +84,8 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  customAppStore = new CustomAppStore();
+  initCustomAppStore(customAppStore);
   appAdapters = await getAvailableAdapters();
   mcpManager = new MCPConfigManager(appAdapters);
   masterStore = new MasterServerStore();
@@ -126,12 +130,16 @@ app.on('window-all-closed', () => {
 
 function setupIPCHandlers() {
   ipcMain.handle('get-apps', async () => {
-    return appAdapters.map(adapter => ({
-      name: adapter.name,
-      icon: adapter.icon,
-      color: adapter.color,
-      syncEnabled: appSyncStates.get(adapter.name) ?? true,
-    } as AppConfig));
+    return appAdapters.map(adapter => {
+      const isCustom = 'isCustom' in adapter && (adapter as any).isCustom === true;
+      return {
+        name: adapter.name,
+        icon: adapter.icon,
+        color: adapter.color,
+        syncEnabled: appSyncStates.get(adapter.name) ?? true,
+        isCustom,
+      } as AppConfig;
+    });
   });
 
   ipcMain.handle('get-all-servers', async () => {
@@ -459,7 +467,7 @@ function setupIPCHandlers() {
       }
     }
     
-    const backupEntries = zip.getEntries().filter(e => e.entryName.startsWith('backups/'));
+    const backupEntries = zip.getEntries().filter((e: any) => e.entryName.startsWith('backups/'));
     for (const entry of backupEntries) {
       const appName = entry.entryName.replace('backups/', '').replace('.json', '');
       const backupData = JSON.parse(entry.getData().toString('utf8'));
@@ -469,6 +477,33 @@ function setupIPCHandlers() {
     }
     
     return true;
+  });
+
+  ipcMain.handle('get-custom-apps', async () => {
+    return await customAppStore.getAllApps();
+  });
+
+  ipcMain.handle('add-custom-app', async (_, customApp: CustomAppConfig) => {
+    const success = await customAppStore.addApp(customApp);
+    if (success) {
+      const adapter = new CustomAppAdapter(customApp);
+      appAdapters.push(adapter);
+      mcpManager = new MCPConfigManager(appAdapters);
+    }
+    return success;
+  });
+
+  ipcMain.handle('remove-custom-app', async (_, id: string) => {
+    const customApp = await customAppStore.getApp(id);
+    if (customApp) {
+      const success = await customAppStore.removeApp(id);
+      if (success) {
+        appAdapters = appAdapters.filter(a => a.name !== customApp.name);
+        mcpManager = new MCPConfigManager(appAdapters);
+      }
+      return success;
+    }
+    return false;
   });
 }
 

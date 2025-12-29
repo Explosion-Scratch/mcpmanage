@@ -20,6 +20,18 @@ export interface AppConfig {
   icon: string;
   color: string;
   syncEnabled?: boolean;
+  isCustom?: boolean;
+}
+
+export interface CustomAppConfig {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  description?: string;
+  configPath: string;
+  configFormat: 'json' | 'toml';
+  configKey: string;
 }
 
 export interface ParsedCommand {
@@ -52,4 +64,5 @@ export interface MCPServerWithMetadata extends MCPServer {
   apps: string[];
   applyToAll?: boolean;
 }
+
 
