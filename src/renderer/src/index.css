@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "./**/*.{ts,tsx}";
 
 :root {
   --bg-primary: rgba(255, 255, 255, 0.4);

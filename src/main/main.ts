@@ -1,5 +1,6 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, ipcMain } from 'electron';
-import * as path from 'path';
 import liquidGlass from 'electron-liquid-glass';
 import { MCPConfigManager } from './services/MCPConfigManager';
 import { MasterServerStore } from './services/MasterServerStore';
@@ -7,6 +8,15 @@ import { MCPStudioService } from './services/MCPStudioService';
 import { BackupService } from './services/BackupService';
 import { AppConfig, MCPServer, MasterMCPServer, PermissionLevel } from '../shared/types';
 import { getAvailableAdapters, AppAdapter } from './apps';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  process.exit(0);
+}
 
 let mainWindow: BrowserWindow | null = null;
 let mcpManager: MCPConfigManager;
@@ -16,37 +26,57 @@ let backupService: BackupService;
 let appAdapters: AppAdapter[] = [];
 let appSyncStates: Map<string, boolean> = new Map();
 
+function getRendererPath(): string {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'app.asar', 'dist', 'index.html');
+  }
+  return path.join(__dirname, '..', 'dist', 'index.html');
+}
+
+function getPublicPath(): string {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'app.asar', 'dist');
+  }
+  return path.join(__dirname, '..', '..', 'src', 'renderer', 'public');
+}
+
 function createWindow() {
+  const isDev = !!process.env.FARM_DEV_SERVER_URL;
+  
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     transparent: true,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
+    icon: path.join(getPublicPath(), 'logo.svg'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.mjs'),
     },
   });
 
   mainWindow.setWindowButtonVisibility(true);
 
-  const isDev = !app.isPackaged;
-  
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL(process.env.FARM_DEV_SERVER_URL!);
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+    mainWindow.loadFile(getRendererPath());
   }
 
   mainWindow.webContents.once('did-finish-load', () => {
+    console.log('Window loaded');
     if (mainWindow && process.platform === 'darwin') {
-      const glassId = liquidGlass.addView(mainWindow.getNativeWindowHandle(), {
+      console.log('Adding glass');
+      const vh = mainWindow.getNativeWindowHandle();
+      console.log(vh);
+      const glassId = liquidGlass.addView(vh, {
         cornerRadius: 12,
         opaque: false,
       });
+      liquidGlass.unstable_setVariant(glassId, 8);
     }
   });
 }

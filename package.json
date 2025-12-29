@@ -3,20 +3,14 @@
   "version": "1.0.0",
   "description": "A desktop application for managing MCP servers",
   "author": "MCP Manager",
-  "main": "dist/main.js",
+  "main": "dist-electron/main.js",
+  "type": "module",
   "scripts": {
-    "dev": "concurrently -k \"bun run build:electron:watch\" \"bun run dev:vite\" \"bun run dev:electron\"",
-    "build:electron": "bun run build:main && bun run build:preload",
-    "build:electron:watch": "concurrently -k \"bun run build:main:watch\" \"bun run build:preload:watch\"",
-    "build:main": "esbuild src/main/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron --external:electron-liquid-glass",
-    "build:main:watch": "esbuild src/main/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron --external:electron-liquid-glass --watch",
-    "build:preload": "esbuild src/main/preload.ts --bundle --platform=node --outfile=dist/preload.js --external:electron",
-    "build:preload:watch": "esbuild src/main/preload.ts --bundle --platform=node --outfile=dist/preload.js --external:electron --watch",
-    "build:renderer": "vite build",
-    "dev:vite": "vite",
-    "dev:electron": "wait-on dist/main.js dist/preload.js http://localhost:5173 && electron .",
-    "build": "bun run build:electron && bun run build:renderer",
-    "start": "electron ."
+    "dev": "farm",
+    "build": "farm build",
+    "start": "electron .",
+    "package": "farm build && electron-builder",
+    "clean": "rm -rf node_modules/.farm dist dist-electron release"
   },
   "dependencies": {
     "@iconify-json/ph": "^1.2.2",
@@ -28,26 +22,28 @@
     "smol-toml": "^1.6.0"
   },
   "devDependencies": {
+    "@farmfe/cli": "^1.0.5",
+    "@farmfe/core": "^1.7.11",
+    "@farmfe/js-plugin-electron": "^1.0.3",
+    "@farmfe/js-plugin-postcss": "^1.12.0",
+    "@farmfe/plugin-react": "^1.2.6",
     "@iconify/types": "^2.0.0",
-    "@tailwindcss/vite": "^4.0.0",
+    "@tailwindcss/postcss": "^4.1.18",
     "@types/adm-zip": "^0.5.7",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.42",
     "@types/react-dom": "^18.2.17",
-    "@vitejs/plugin-react": "^4.2.1",
     "clsx": "^2.1.1",
-    "concurrently": "^8.2.2",
     "electron": "^28.0.0",
     "electron-builder": "^24.13.3",
-    "esbuild": "^0.19.8",
     "lucide-react": "^0.294.0",
+    "postcss": "^8.5.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-refresh": "^0.18.0",
     "tailwind-merge": "^2.1.0",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5.3.2",
-    "vite": "^5.0.5",
-    "wait-on": "^7.2.0"
+    "typescript": "^5.3.2"
   },
   "build": {
     "appId": "com.mcpmanage.app",
@@ -57,6 +53,7 @@
     },
     "files": [
       "dist/**/*",
+      "dist-electron/**/*",
       "package.json"
     ],
     "mac": {

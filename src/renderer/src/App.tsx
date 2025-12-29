@@ -119,6 +119,7 @@ export default function MCPManager() {
           iconUrl: server.iconUrl,
           permissions: server.permissions,
           apps: server.apps,
+          applyToAll: server.applyToAll,
         }))
       : [];
     setServers(serversWithMeta);
@@ -694,39 +695,43 @@ function ManageServersView({
                   </td>
                   <td className="px-4 py-3 cursor-pointer" onClick={() => onSelect(server.id)}>
                     {server.enabled ? (
-                      <div className="flex items-center gap-1">
-                        {(server.apps || [])
-                          .filter(appName => {
-                            const app = apps.find(a => a.name === appName);
-                            return app && (app.syncEnabled !== false);
-                          })
-                          .sort()
-                          .slice(0, 3)
-                          .map((appName) => {
-                            const app = apps.find(a => a.name === appName);
-                            return app ? (
-                              <img
-                                key={appName}
-                                src={app.icon}
-                                alt={app.name}
-                                className="w-5 h-5 rounded border border-[var(--border-secondary)]"
-                                title={app.name}
-                                onError={e => (e.currentTarget.style.display = 'none')}
-                              />
-                            ) : null;
-                          })}
-                        {(server.apps || []).filter(appName => {
-                          const app = apps.find(a => a.name === appName);
-                          return app && (app.syncEnabled !== false);
-                        }).length > 3 && (
-                          <span className="text-xs text-[var(--text-secondary)] italic ml-1">
-                            +{(server.apps || []).filter(appName => {
+                      server.applyToAll ? (
+                        <Badge>all</Badge>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          {(server.apps || [])
+                            .filter(appName => {
                               const app = apps.find(a => a.name === appName);
                               return app && (app.syncEnabled !== false);
-                            }).length - 3} more
-                          </span>
-                        )}
-                      </div>
+                            })
+                            .sort()
+                            .slice(0, 3)
+                            .map((appName) => {
+                              const app = apps.find(a => a.name === appName);
+                              return app ? (
+                                <img
+                                  key={appName}
+                                  src={app.icon}
+                                  alt={app.name}
+                                  className="w-5 h-5 rounded border border-[var(--border-secondary)]"
+                                  title={app.name}
+                                  onError={e => (e.currentTarget.style.display = 'none')}
+                                />
+                              ) : null;
+                            })}
+                          {(server.apps || []).filter(appName => {
+                            const app = apps.find(a => a.name === appName);
+                            return app && (app.syncEnabled !== false);
+                          }).length > 3 && (
+                            <span className="text-xs text-[var(--text-secondary)] italic ml-1">
+                              +{(server.apps || []).filter(appName => {
+                                const app = apps.find(a => a.name === appName);
+                                return app && (app.syncEnabled !== false);
+                              }).length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )
                     ) : (
                       <Badge>
                         Inactive

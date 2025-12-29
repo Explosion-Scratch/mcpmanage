@@ -1,5 +1,6 @@
 import { AppAdapter } from './AppAdapter';
 import { ClaudeAdapter } from './ClaudeAdapter';
+import { ClaudeCodeAdapter } from './ClaudeCodeAdapter';
 import { MistralVibeAdapter } from './MistralVibeAdapter';
 import { ZedAdapter } from './ZedAdapter';
 import { CursorAdapter } from './CursorAdapter';
@@ -13,6 +14,7 @@ import { ClineAdapter } from './ClineAdapter';
 
 export const APP_ADAPTERS: AppAdapter[] = [
   new ClaudeAdapter(),
+  new ClaudeCodeAdapter(),
   new MistralVibeAdapter(),
   new ZedAdapter(),
   new CursorAdapter(),
