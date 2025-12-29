@@ -1,22 +1,21 @@
 import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
 import { MCPServers } from '../../shared/types';
 import { AppAdapter } from './AppAdapter';
 import { FileService } from '../services/FileService';
+import path from 'path';
+import os from 'os';
 
-export class CursorAdapter implements AppAdapter {
-  name = 'Cursor';
-  icon = 'https://www.cursor.com/favicon.ico';
-  color = '#000000';
+export class AntigravityAdapter implements AppAdapter {
+  name = 'Google Antigravity';
+  icon = 'https://antigravity.google/favicon.ico';
+  color = '#1a73e8';
   
   getPath(): string {
-    return path.join(os.homedir(), 'Library/Application Support/Cursor/User/globalStorage/mcp.json');
+    return path.join(os.homedir(), '.gemini/antigravity/mcp_config.json');
   }
   
   async configExists(): Promise<boolean> {
-    const appPath = '/Applications/Cursor.app';
-    return fs.existsSync(appPath);
+    return fs.existsSync(this.getPath());
   }
   
   async getServers(): Promise<MCPServers> {

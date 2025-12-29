@@ -11,6 +11,7 @@ import { QwenAdapter } from './QwenAdapter';
 import { OpencodeAdapter } from './OpencodeAdapter';
 import { KiloCodeAdapter } from './KiloCodeAdapter';
 import { ClineAdapter } from './ClineAdapter';
+import { AntigravityAdapter } from './AntigravityAdapter';
 
 export const APP_ADAPTERS: AppAdapter[] = [
   new ClaudeAdapter(),
@@ -25,6 +26,7 @@ export const APP_ADAPTERS: AppAdapter[] = [
   new OpencodeAdapter(),
   new KiloCodeAdapter(),
   new ClineAdapter(),
+  new AntigravityAdapter(),
 ];
 
 export async function getAvailableAdapters(): Promise<AppAdapter[]> {

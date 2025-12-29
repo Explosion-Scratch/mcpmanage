@@ -11,12 +11,11 @@ export class GeminiAdapter implements AppAdapter {
   color = '#4285f4';
   
   getPath(): string {
-    return '~/.gemini/settings.json';
+    return path.join(os.homedir(), '.gemini/settings.json');
   }
   
   async configExists(): Promise<boolean> {
-    const configPath = this.getPath().replace('~', os.homedir());
-    return fs.existsSync(configPath);
+    return fs.existsSync(this.getPath());
   }
   
   async getServers(): Promise<MCPServers> {

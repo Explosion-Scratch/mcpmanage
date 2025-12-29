@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import * as toml from 'smol-toml';
 import { MCPServers } from '../../shared/types';
 import { AppAdapter } from './AppAdapter';
@@ -11,16 +12,15 @@ export class MistralVibeAdapter implements AppAdapter {
   color = '#F3D0C1';
 
   getPath(): string {
-    return '~/.vibe/config.toml';
+    return path.join(os.homedir(), '.vibe/config.toml');
   }
 
   async configExists(): Promise<boolean> {
-    const expandedPath = FileService.expandPath(this.getPath());
-    return fs.existsSync(expandedPath);
+    return fs.existsSync(this.getPath());
   }
 
   async getServers(): Promise<MCPServers> {
-    const expandedPath = FileService.expandPath(this.getPath());
+    const expandedPath = this.getPath();
     if (!fs.existsSync(expandedPath)) {
       return {};
     }
@@ -58,7 +58,7 @@ export class MistralVibeAdapter implements AppAdapter {
   }
 
   async setServers(servers: MCPServers): Promise<boolean> {
-    const expandedPath = FileService.expandPath(this.getPath());
+    const expandedPath = this.getPath();
     let data: any = {};
 
     try {

@@ -11,12 +11,11 @@ export class OpencodeAdapter implements AppAdapter {
   color = '#6366f1';
   
   getPath(): string {
-    return '~/.config/opencode/opencode.json';
+    return path.join(os.homedir(), '.config/opencode/opencode.json');
   }
   
   async configExists(): Promise<boolean> {
-    const configPath = this.getPath().replace('~', os.homedir());
-    const configDir = path.dirname(configPath);
+    const configDir = path.dirname(this.getPath());
     return fs.existsSync(configDir);
   }
   

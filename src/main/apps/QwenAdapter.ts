@@ -11,12 +11,11 @@ export class QwenAdapter implements AppAdapter {
   color = '#5f46e8';
   
   getPath(): string {
-    return '~/.qwen/settings.json';
+    return path.join(os.homedir(), '.qwen/settings.json');
   }
   
   async configExists(): Promise<boolean> {
-    const configPath = this.getPath().replace('~', os.homedir());
-    return fs.existsSync(configPath);
+    return fs.existsSync(this.getPath());
   }
   
   async getServers(): Promise<MCPServers> {

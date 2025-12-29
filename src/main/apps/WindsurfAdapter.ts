@@ -1,4 +1,6 @@
 import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 import { MCPServers } from '../../shared/types';
 import { AppAdapter } from './AppAdapter';
 import { FileService } from '../services/FileService';
@@ -9,7 +11,7 @@ export class WindsurfAdapter implements AppAdapter {
   color = '#09B6A2';
   
   getPath(): string {
-    return '~/Library/Application Support/Windsurf/mcp_server_config.json';
+    return path.join(os.homedir(), 'Library/Application Support/Windsurf/mcp_server_config.json');
   }
   
   async configExists(): Promise<boolean> {

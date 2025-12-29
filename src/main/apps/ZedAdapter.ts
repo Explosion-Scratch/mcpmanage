@@ -1,4 +1,6 @@
 import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 import { MCPServer, MCPServers } from '../../shared/types';
 import { AppAdapter } from './AppAdapter';
 import { FileService } from '../services/FileService';
@@ -9,7 +11,7 @@ export class ZedAdapter implements AppAdapter {
   color = '#606266';
   
   getPath(): string {
-    return '~/.config/zed/settings.json';
+    return path.join(os.homedir(), '.config/zed/settings.json');
   }
   
   async configExists(): Promise<boolean> {

@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import { MCPServers } from '../../shared/types';
 import { AppAdapter } from './AppAdapter';
 import { FileService } from '../services/FileService';
+import path from 'path';
+import os from 'os';
 
 export class VSCodeAdapter implements AppAdapter {
   name = 'VSCode';
@@ -9,7 +11,7 @@ export class VSCodeAdapter implements AppAdapter {
   color = '#007acc';
   
   getPath(): string {
-    return '~/Library/Application Support/Code/User/globalStorage/mcp.json';
+    return path.join(os.homedir(), 'Library/Application Support/Code/User/globalStorage/mcp.json');
   }
   
   async configExists(): Promise<boolean> {
