@@ -89,7 +89,11 @@ export class VSCodeAdapter implements AppAdapter {
     for (const [key, value] of Object.entries(existingServers)) {
       if (!transformedServers[key]) {
         const existing = value as any;
-        if (existing.type === 'http' || existing.gallery) {
+        // Only preserve servers that McpManage does not support (and thus didn't read)
+        // If it supports them (stdio or http), their absence means they were deleted.
+        const isSupported = !!existing.command || (existing.type === 'http' && !!existing.url);
+        
+        if (!isSupported) {
           transformedServers[key] = existing;
         }
       }
