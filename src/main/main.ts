@@ -137,9 +137,7 @@ app.on('window-all-closed', () => {
   if (mcpStudioService) {
     mcpStudioService.stopAllServers();
   }
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  app.quit();
 });
 
 function setupIPCHandlers() {
