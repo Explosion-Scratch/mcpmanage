@@ -35,11 +35,25 @@ function getRendererPath(): string {
   return path.join(__dirname, '..', 'dist', 'index.html');
 }
 
-function getPublicPath(): string {
+function getAssetsPath(): string {
   if (app.isPackaged) {
-    return path.join(process.resourcesPath, 'app.asar', 'dist');
+    return path.join(process.resourcesPath, 'assets');
   }
-  return path.join(__dirname, '..', '..', 'src', 'renderer', 'public');
+  return path.join(__dirname, '..', '..', 'src', 'renderer', 'assets');
+}
+
+function getIconPath(): string {
+  if (process.platform === 'darwin') {
+    if (app.isPackaged) {
+      return path.join(process.resourcesPath, '..', 'Resources', 'electron.icns');
+    }
+    const icnsPath = path.join(__dirname, '..', '..', 'build', 'icon.icns');
+    const fs = require('fs');
+    if (fs.existsSync(icnsPath)) {
+      return icnsPath;
+    }
+  }
+  return path.join(getAssetsPath(), 'logo.svg');
 }
 
 function createWindow() {
@@ -51,7 +65,7 @@ function createWindow() {
     transparent: true,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
-    icon: path.join(getPublicPath(), 'logo.svg'),
+    icon: getIconPath(),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

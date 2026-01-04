@@ -7,10 +7,12 @@
   "type": "module",
   "scripts": {
     "dev": "farm",
-    "build": "farm build",
+    "build": "farm build && cp -r src/renderer/public/assets dist/",
     "start": "electron .",
+    "generate-icons": "node scripts/generate-icons.js",
+    "prepackage": "bun run generate-icons",
     "package": "farm build && electron-builder",
-    "clean": "rm -rf node_modules/.farm dist dist-electron release"
+    "clean": "rm -rf node_modules/.farm dist dist-electron release build"
   },
   "dependencies": {
     "@iconify-json/ph": "^1.2.2",
@@ -48,6 +50,7 @@
   "build": {
     "appId": "com.mcpmanage.app",
     "productName": "MCP Manager",
+    "icon": "build/icon.icns",
     "directories": {
       "output": "release"
     },
@@ -56,12 +59,19 @@
       "dist-electron/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "src/renderer/assets/logo.svg",
+        "to": "assets/logo.svg"
+      }
+    ],
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": [
         "dmg",
         "zip"
       ],
+      "icon": "build/icon.icns",
       "identity": null
     }
   }

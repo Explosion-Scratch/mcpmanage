@@ -10,8 +10,10 @@ export default defineConfig({
     output: {
       path: '../../dist',
       publicPath: './',
+      assetsFilename: 'assets/[resourceName].[contentHash].[ext]',
     },
   },
+  publicDir: 'public',
   server: {
     port: 5173,
     hmr: true,

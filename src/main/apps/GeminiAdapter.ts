@@ -31,7 +31,14 @@ export class GeminiAdapter implements AppAdapter {
     if (!data) {
       data = {};
     }
-    data.mcpServers = servers;
+    
+    const cleanedServers: MCPServers = {};
+    for (const [key, server] of Object.entries(servers)) {
+      const { enabled, ...rest } = server;
+      cleanedServers[key] = rest as any;
+    }
+    
+    data.mcpServers = cleanedServers;
     return await FileService.writeJSON(this.getPath(), data);
   }
 }
