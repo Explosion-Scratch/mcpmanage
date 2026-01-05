@@ -35,4 +35,3 @@ export class QwenAdapter implements AppAdapter {
     return await FileService.writeJSON(this.getPath(), data);
   }
 }
-

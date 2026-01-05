@@ -5,10 +5,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getApps: () => ipcRenderer.invoke('get-apps'),
   getAllServers: () => ipcRenderer.invoke('get-all-servers'),
   getAppServers: (appName: string) => ipcRenderer.invoke('get-app-servers', appName),
-  addServer: (name: string, command: string, env?: Record<string, string>, appNames?: string[]) =>
-    ipcRenderer.invoke('add-server', name, command, env, appNames),
-  updateServer: (name: string, command: string, env?: Record<string, string>, appNames?: string[]) =>
-    ipcRenderer.invoke('update-server', name, command, env, appNames),
+  addServer: (name: string, command: string, env?: Record<string, string>, appNames?: string[], transportType?: string, url?: string) =>
+    ipcRenderer.invoke('add-server', name, command, env, appNames, transportType, url),
+  updateServer: (name: string, command: string, env?: Record<string, string>, appNames?: string[], transportType?: string, url?: string) =>
+    ipcRenderer.invoke('update-server', name, command, env, appNames, transportType, url),
   removeServer: (name: string, appNames?: string[]) =>
     ipcRenderer.invoke('remove-server', name, appNames),
   toggleServer: (name: string, enabled: boolean, appNames?: string[]) =>

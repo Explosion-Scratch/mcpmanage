@@ -1,2 +1,2719 @@
-import __farmNodeModule from 'node:module';global.nodeRequire = __farmNodeModule.createRequire(import.meta.url);global['e20309b3317686f6c8a7cfe5559430f9'] = {__FARM_TARGET_ENV__: 'node'};const e="undefined"!=typeof globalThis?globalThis:window;class t{constructor(e,t){this.resource_pot="",this.id=e,this.exports={},this.meta={env:{}},this.require=t;}o(e,t,r){Object.defineProperty(e,t,{enumerable:!0,get:r});}d(e,t,r){this.o(e,t,function(){return r;});}_m(e){let t="__esModule";e[t]||Object.defineProperty(e,t,{value:!0});}_e(e,t){return Object.keys(t).forEach(function(r){"default"===r||Object.prototype.hasOwnProperty.call(e,r)||Object.defineProperty(e,r,{value:t[r],enumerable:!0,configurable:!0});}),t;}i(e){return e&&e.__esModule?e:{default:e};}_g(e){if("function"!=typeof WeakMap)return null;var t=new WeakMap,r=new WeakMap;return(this._g=function(e){return e?r:t;})(e);}w(e,t){if(!t&&e&&e.__esModule)return e;if(null===e||"object"!=typeof e&&"function"!=typeof e)return{default:e};var r=this._g(t);if(r&&r.has(e))return r.get(e);var i={__proto__:null},o=Object.defineProperty&&Object.getOwnPropertyDescriptor;for(var s in e)if("default"!==s&&Object.prototype.hasOwnProperty.call(e,s)){var a=o?Object.getOwnPropertyDescriptor(e,s):null;a&&(a.get||a.set)?Object.defineProperty(i,s,a):i[s]=e[s];}return i.default=e,r&&r.set(e,i),i;}_(e,t,r,i){this.d(e,t,r[i||t]);}p(e,t){for(let r of Object.keys(t)){let i=e[r];i&&!Object.prototype.hasOwnProperty.call(t,i)&&this.d(t,i,t[r]);}}f(e){return void 0!==e.default?e.default:e;}}class r{constructor(e){this.plugins=[],this.plugins=e;}hookSerial(e,...t){for(let r of this.plugins){let i=r[e];i&&i.apply(r,t);}}hookBail(e,...t){for(let r of this.plugins){let i=r[e];if(i){let e=i.apply(r,t);if(e)return e;}}}}const i=global.e20309b3317686f6c8a7cfe5559430f9,o="undefined"!=typeof window?window:"undefined"!=typeof global?global:{},s=i.__FARM_TARGET_ENV__||"node",a="browser"===s&&o.document;class l{constructor(e,t){this.moduleSystem=e,this._loadedResources={},this._loadingResources={},this.publicPaths=t;}load(e,t=0){if(!a){let t=this.moduleSystem.pluginContainer.hookBail("loadResource",e);if(t)return t.then(t=>{if(!t.success&&t.retryWithDefaultResourceLoader){if(0===e.type)return this._loadScript(`./${e.path}`);if(1===e.type)return this._loadLink(`./${e.path}`);}else if(!t.success)throw Error(`[Farm] Failed to load resource: "${e.path}, type: ${e.type}". Original Error: ${t.err}`);});if(0===e.type)return this._loadScript(`./${e.path}`);if(1===e.type)return this._loadLink(`./${e.path}`);}let r=this.publicPaths[t],i=`${r.endsWith("/")?r.slice(0,-1):r}/${e.path}`;if(this._loadedResources[e.path])return Promise.resolve();if(this._loadingResources[e.path])return this._loadingResources[e.path];let o=this.moduleSystem.pluginContainer.hookBail("loadResource",e);return o?o.then(r=>{if(r.success)this.setLoadedResource(e.path);else if(r.retryWithDefaultResourceLoader)return this._load(i,e,t);else throw Error(`[Farm] Failed to load resource: "${e.path}, type: ${e.type}". Original Error: ${r.err}`);}):this._load(i,e,t);}setLoadedResource(e,t=!0){this._loadedResources[e]=t;}isResourceLoaded(e){return this._loadedResources[e];}_load(e,t,r){let i=Promise.resolve();return 0===t.type?i=this._loadScript(e):1===t.type&&(i=this._loadLink(e)),this._loadingResources[t.path]=i,i.then(()=>{this._loadedResources[t.path]=!0,this._loadingResources[t.path]=null;}).catch(i=>{if(console.warn(`[Farm] Failed to load resource "${e}" using publicPath: ${this.publicPaths[r]}`),++r<this.publicPaths.length)return this._load(e,t,r);throw this._loadingResources[t.path]=null,Error(`[Farm] Failed to load resource: "${t.path}, type: ${t.type}". ${i}`);}),i;}_loadScript(e){return import(e);}_loadLink(e){return Promise.resolve();}}class n{constructor(){this.dynamicResources=[],this.modules={},this.cache={},this.publicPaths=[],this.dynamicModuleResourcesMap={},this.resourceLoader=new l(this,this.publicPaths),this.pluginContainer=new r([]),this.targetEnv=s,this.externalModules={},this.reRegisterModules=!1;}require(e,r=!1){if(this.cache[e]&&!this.pluginContainer.hookBail("readModuleCache",this.cache[e])){let t=this.cache[e];return t.initializer||t.exports;}let i=this.modules[e];if(!i){if(this.externalModules[e]){let t=this.externalModules[e];return r&&t.default||t;}return("node"===this.targetEnv||!a)&&nodeRequire?nodeRequire(e):(this.pluginContainer.hookSerial("moduleNotFound",e),console.debug(`[Farm] Module "${e}" is not registered`),{});}let s=new t(e,this.require.bind(this));s.resource_pot=i.__farm_resource_pot__,this.pluginContainer.hookSerial("moduleCreated",s),this.cache[e]=s,o.require||(o.require=this.require.bind(this));let l=i(s,s.exports,this.require.bind(this),this.farmDynamicRequire.bind(this));return l&&l instanceof Promise?(s.initializer=l.then(()=>(this.pluginContainer.hookSerial("moduleInitialized",s),s.initializer=void 0,s.exports)),s.initializer):(this.pluginContainer.hookSerial("moduleInitialized",s),s.exports);}farmDynamicRequire(e){if(this.modules[e]){let t=this.require(e);return t.__farm_async?t.default:Promise.resolve(t);}return this.loadDynamicResources(e);}loadDynamicResourcesOnly(e,t=!1){let r=this.dynamicModuleResourcesMap[e].map(e=>this.dynamicResources[e]);if(!r||0===r.length)throw Error(`Dynamic imported module "${e}" does not belong to any resource`);return t&&this.clearCache(e),Promise.all(r.map(e=>{if(t){let t=this.resourceLoader.isResourceLoaded(e.path);if(this.resourceLoader.setLoadedResource(e.path,!1),t)return this.resourceLoader.load({...e,path:`${e.path}?t=${Date.now()}`});}return this.resourceLoader.load(e);}));}loadDynamicResources(e,t=!1){let r=this.dynamicModuleResourcesMap[e].map(e=>this.dynamicResources[e]);return this.loadDynamicResourcesOnly(e,t).then(()=>{if(r.every(e=>0!==e.type))return;if(!this.modules[e])throw Error(`Dynamic imported module "${e}" is not registered.`);let t=this.require(e);return t.__farm_async?t.default:t;}).catch(t=>{throw console.error(`[Farm] Error loading dynamic module "${e}"`,t),t;});}register(e,t){if(this.modules[e]&&!this.reRegisterModules){console.warn(`Module "${e}" has registered! It should not be registered twice`);return;}this.modules[e]=t;}update(e,t){this.modules[e]=t,this.clearCache(e);}delete(e){return!!this.modules[e]&&(this.clearCache(e),delete this.modules[e],!0);}getModuleUrl(e){let t=this.publicPaths[0]??"";return a?`${window.location.protocol}//${window.location.host}${t.endsWith("/")?t.slice(0,-1):t}/${this.modules[e].__farm_resource_pot__}`:this.modules[e].__farm_resource_pot__;}getCache(e){return this.cache[e];}clearCache(e){return!!this.cache[e]&&(delete this.cache[e],!0);}setInitialLoadedResources(e){for(let t of e)this.resourceLoader.setLoadedResource(t);}setDynamicModuleResourcesMap(e,t){this.dynamicResources=e,this.dynamicModuleResourcesMap=t;}setPublicPaths(e){this.publicPaths=e,this.resourceLoader.publicPaths=this.publicPaths;}setPlugins(e){this.pluginContainer.plugins=e;}addPlugin(e){this.pluginContainer.plugins.every(t=>t.name!==e.name)&&this.pluginContainer.plugins.push(e);}removePlugin(e){this.pluginContainer.plugins=this.pluginContainer.plugins.filter(t=>t.name!==e);}setExternalModules(e){Object.assign(this.externalModules,e||{});}bootstrap(){this.pluginContainer.hookSerial("bootstrap",this);}}i.__farm_module_system__=(function(){let e=new n;return function(){return e;};})()(),global.e20309b3317686f6c8a7cfe5559430f9.__farm_module_system__.setPlugins([{name:"farm-runtime-import-meta",_moduleSystem:{},bootstrap(e){this._moduleSystem=e;},moduleCreated(t){let r;let i=this._moduleSystem.publicPaths?.[0]||"",o="node"===this._moduleSystem.targetEnv,{location:s}=e;try{r=(s?new URL(i,`${s.protocol}//${s.host}`):new URL(t.resource_pot)).pathname;}catch(e){r="/";}t.meta.env={...{NODE_ENV:"production",mode:"production"}??{},dev:"development"===process.env.NODE_ENV,prod:"production"===process.env.NODE_ENV,BASE_URL:r,SSR:o};let a=s?`${s.protocol}//${s.host}${i.replace(/\/$/,"")}/${t.id}?t=${Date.now()}`:t.resource_pot;t.meta.url=a;}}]);import * as __farm_external_module__modelcontextprotocol_sdk_client_index_js from "@modelcontextprotocol/sdk/client/index.js";import * as __farm_external_module__modelcontextprotocol_sdk_client_stdio_js from "@modelcontextprotocol/sdk/client/stdio.js";import * as __farm_external_module_electron from "electron";import * as __farm_external_module_electron_liquid_glass from "electron-liquid-glass";import * as __farm_external_module_fs from "fs";import * as __farm_external_module_fs_promises from "fs/promises";import * as __farm_external_module_node_path from "node:path";import * as __farm_external_module_node_url from "node:url";import * as __farm_external_module_os from "os";import * as __farm_external_module_path from "path";import * as __farm_external_module_smol_toml from "smol-toml";global['e20309b3317686f6c8a7cfe5559430f9'].__farm_module_system__.setExternalModules({"@modelcontextprotocol/sdk/client/index.js": __farm_external_module__modelcontextprotocol_sdk_client_index_js && __farm_external_module__modelcontextprotocol_sdk_client_index_js.default && !__farm_external_module__modelcontextprotocol_sdk_client_index_js.__esModule ? {...__farm_external_module__modelcontextprotocol_sdk_client_index_js,__esModule:true} : {...__farm_external_module__modelcontextprotocol_sdk_client_index_js},"@modelcontextprotocol/sdk/client/stdio.js": __farm_external_module__modelcontextprotocol_sdk_client_stdio_js && __farm_external_module__modelcontextprotocol_sdk_client_stdio_js.default && !__farm_external_module__modelcontextprotocol_sdk_client_stdio_js.__esModule ? {...__farm_external_module__modelcontextprotocol_sdk_client_stdio_js,__esModule:true} : {...__farm_external_module__modelcontextprotocol_sdk_client_stdio_js},"electron": __farm_external_module_electron && __farm_external_module_electron.default && !__farm_external_module_electron.__esModule ? {...__farm_external_module_electron,__esModule:true} : {...__farm_external_module_electron},"electron-liquid-glass": __farm_external_module_electron_liquid_glass && __farm_external_module_electron_liquid_glass.default && !__farm_external_module_electron_liquid_glass.__esModule ? {...__farm_external_module_electron_liquid_glass,__esModule:true} : {...__farm_external_module_electron_liquid_glass},"fs": __farm_external_module_fs && __farm_external_module_fs.default && !__farm_external_module_fs.__esModule ? {...__farm_external_module_fs,__esModule:true} : {...__farm_external_module_fs},"fs/promises": __farm_external_module_fs_promises && __farm_external_module_fs_promises.default && !__farm_external_module_fs_promises.__esModule ? {...__farm_external_module_fs_promises,__esModule:true} : {...__farm_external_module_fs_promises},"node:path": __farm_external_module_node_path && __farm_external_module_node_path.default && !__farm_external_module_node_path.__esModule ? {...__farm_external_module_node_path,__esModule:true} : {...__farm_external_module_node_path},"node:url": __farm_external_module_node_url && __farm_external_module_node_url.default && !__farm_external_module_node_url.__esModule ? {...__farm_external_module_node_url,__esModule:true} : {...__farm_external_module_node_url},"os": __farm_external_module_os && __farm_external_module_os.default && !__farm_external_module_os.__esModule ? {...__farm_external_module_os,__esModule:true} : {...__farm_external_module_os},"path": __farm_external_module_path && __farm_external_module_path.default && !__farm_external_module_path.__esModule ? {...__farm_external_module_path,__esModule:true} : {...__farm_external_module_path},"smol-toml": __farm_external_module_smol_toml && __farm_external_module_smol_toml.default && !__farm_external_module_smol_toml.__esModule ? {...__farm_external_module_smol_toml,__esModule:true} : {...__farm_external_module_smol_toml}});(function(_){var filename = ((function(){return import.meta.url})());for(var r in _){_[r].__farm_resource_pot__=filename;global['e20309b3317686f6c8a7cfe5559430f9'].__farm_module_system__.register(r,_[r])}})({"01630ced":function e(e,t,r,a){e._m(t),e.o(t,"MCPConfigManager",()=>s);class s{adapters;constructor(e){this.adapters=e;}getAdapters(){return this.adapters;}parseCommand(e){let t=e.trim().split(/\s+/);if(0===t.length)throw Error("Empty command");return{command:t[0],args:t.slice(1)};}async readAppConfig(e){return await e.getServers();}async writeAppConfig(e,t){return await e.setServers(t);}async getAllServers(){let e={};for(let t of this.adapters)for(let[r,a]of Object.entries(await this.readAppConfig(t)))e[r]?e[r].apps.includes(t.name)||e[r].apps.push(t.name):e[r]={...a,apps:[t.name]};return e;}async addServer(e,t,r){let a=r?this.adapters.filter(e=>r.includes(e.name)):this.adapters,s=!0;for(let r of a){let a=await this.readAppConfig(r);a[e]=t,await this.writeAppConfig(r,a)||(s=!1);}return s;}async updateServer(e,t,r){return await this.addServer(e,t,r);}async removeServer(e,t){let r=t?this.adapters.filter(e=>t.includes(e.name)):this.adapters,a=!0;for(let t of r){let r=await this.readAppConfig(t);delete r[e],await this.writeAppConfig(t,r)||(a=!1);}return a;}async toggleServer(e,t,r,a){return t?await this.addServer(e,r,a):await this.removeServer(e,a);}}},"0b861e2b":function t(t,n,e,o){t._m(n),t.o(n,"MCPStudioService",()=>i);var r=e("@modelcontextprotocol/sdk/client/index.js"),s=e("@modelcontextprotocol/sdk/client/stdio.js");class i{connections=new Map;mainWindow=null;setMainWindow(t){this.mainWindow=t;}sendLog(t,n){this.mainWindow&&!this.mainWindow.isDestroyed()&&this.mainWindow.webContents.send("studio:log",t,n);}async startServer(t){try{this.connections.has(t.id)&&await this.stopServer(t.id);let n=new r.Client({name:"mcp-studio-client",version:"1.0.0"},{capabilities:{}}),e=new s.StdioClientTransport({command:t.command,args:t.args,env:t.env}),o=()=>{let n=e._process;if(!n){setTimeout(o,50);return;}if(n.stderr&&n.stderr.on("data",n=>{let e=n.toString();e&&e.split("\n").filter(t=>t.trim()).forEach(n=>this.sendLog(t.id,n));}),n.stdout){let e=[];n.stdout.on("data",n=>{let o=n.toString();e.push(o);let r=e.join("").split("\n");e.length=0,""!==r[r.length-1]&&e.push(r.pop()),r.forEach(n=>{let e=n.trim();!e||e.startsWith('{"jsonrpc"')||e.startsWith("Content-Length:")||this.sendLog(t.id,n);});});}};return o(),await n.connect(e),this.connections.set(t.id,{client:n,transport:e,server:t}),{success:!0};}catch(t){return{success:!1,error:t instanceof Error?t.message:"Unknown error"};}}async stopServer(t){let n=this.connections.get(t);if(!n)return!1;try{return await n.client.close(),this.connections.delete(t),!0;}catch(n){return this.connections.delete(t),!1;}}async listTools(t){let n=this.connections.get(t);if(!n)throw Error("Server not started");try{return(await n.client.listTools()).tools;}catch(t){throw Error(`Failed to list tools: ${t instanceof Error?t.message:"Unknown error"}`);}}async callTool(t,n,e){let o=this.connections.get(t);if(!o)throw Error("Server not started");try{return await o.client.callTool({name:n,arguments:e});}catch(t){throw Error(`Failed to call tool: ${t instanceof Error?t.message:"Unknown error"}`);}}isServerRunning(t){return this.connections.has(t);}stopAllServers(){for(let[t]of this.connections)this.stopServer(t);}}},"0ca95b01":function e(e,t,a,r){e._m(t),e.o(t,"ClaudeAdapter",()=>o);var i=e.w(a("fs")),s=e.w(a("path")),c=e.w(a("os")),n=a("454c8ae6");class o{name="Claude Desktop";icon="https://www.claude.ai/favicon.ico";color="#e28743";getPath(){return s.join(c.homedir(),"Library/Application Support/Claude/claude_desktop_config.json");}async configExists(){return i.existsSync("/Applications/Claude.app");}async getServers(){let e=await n.FileService.readJSON(this.getPath());return e&&e.mcpServers?e.mcpServers:{};}async setServers(e){let t=await n.FileService.readJSON(this.getPath());return t||(t={}),t.mcpServers=e,await n.FileService.writeJSON(this.getPath(),t);}}},"0e9b2207":function s(s,t,p,a){s._m(t),s.o(t,"CustomAppStore",()=>h);var e=s.w(p("fs")),r=s.w(p("path")),i=p("electron");class h{storePath;apps=[];constructor(){let s=i.app.getPath("userData");this.storePath=r.join(s,"custom-apps.json"),this.load();}load(){try{if(e.existsSync(this.storePath)){let s=JSON.parse(e.readFileSync(this.storePath,"utf-8"));this.apps=s.apps||[];}}catch(s){console.error("Error loading custom apps:",s),this.apps=[];}}save(){try{let s=r.dirname(this.storePath);e.existsSync(s)||e.mkdirSync(s,{recursive:!0}),e.writeFileSync(this.storePath,JSON.stringify({apps:this.apps},null,2));}catch(s){console.error("Error saving custom apps:",s);}}async getAllApps(){return this.apps;}async addApp(s){let t=this.apps.findIndex(t=>t.id===s.id);return t>=0?this.apps[t]=s:this.apps.push(s),this.save(),!0;}async removeApp(s){let t=this.apps.length;return this.apps=this.apps.filter(t=>t.id!==s),this.apps.length!==t&&(this.save(),!0);}async getApp(s){return this.apps.find(t=>t.id===s);}}},"1e52c97c":function e(e,t,n,a){e._m(t),e.o(t,"OpencodeAdapter",()=>s);var o=e.w(n("fs")),c=e.w(n("os")),r=e.w(n("path")),i=n("454c8ae6");class s{name="opencode CLI";icon="https://github.com/sst/opencode/blob/dev/packages/identity/avatar-dark.png?raw=true";color="#6366f1";getPath(){return r.join(c.homedir(),".config/opencode/opencode.json");}async configExists(){let e=r.dirname(this.getPath());return o.existsSync(e);}async getServers(){let e=await i.FileService.readJSON(this.getPath());if(!e||!e.mcp)return{};let t={};for(let[n,a]of Object.entries(e.mcp))if("local"===a.type){let e={command:a.command?.[0]||"",args:a.command?.slice(1)||[],env:a.environment||{}};t[n]=e;}return t;}async setServers(e){let t=await i.FileService.readJSON(this.getPath());t||(t={$schema:"https://opencode.ai/config.json"});let n={};for(let[t,a]of Object.entries(e))n[t]={type:"local",command:[a.command,...a.args||[]],enabled:!0},a.env&&Object.keys(a.env).length>0&&(n[t].environment=a.env);return t.mcp=n,await i.FileService.writeJSON(this.getPath(),t);}}},"290335cd":function e(e,t,i,s){e._m(t),e.o(t,"ClineAdapter",()=>l);var r=e.w(i("fs")),n=e.w(i("os")),a=e.w(i("path")),o=i("454c8ae6");class l{name="Cline";icon="https://raw.githubusercontent.com/cline/cline/refs/heads/main/docs/assets/robot_panel_light.png";color="#edab49";getConfigPaths(){let e=n.homedir();return[a.join(e,"Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"),a.join(e,"Library/Application Support/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"),a.join(e,"Library/Application Support/VSCodium/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json")];}findExistingPath(){for(let e of this.getConfigPaths())if(r.existsSync(e))return e;return null;}getPath(){return this.findExistingPath()||this.getConfigPaths()[0];}async configExists(){return null!==this.findExistingPath();}async getServers(){let e=await o.FileService.readJSON(this.getPath());return e&&e.mcpServers?e.mcpServers:{};}async setServers(e){let t=await o.FileService.readJSON(this.getPath());return t||(t={}),t.mcpServers=e,await o.FileService.writeJSON(this.getPath(),t);}}},"324d43da":function a(a,r,t,e){a._m(r),a.o(r,"BackupService",()=>n);var c=a.w(t("fs/promises")),i=a.w(t("path")),s=t("electron");class n{backupDir;constructor(){this.backupDir=i.join(s.app.getPath("userData"),"backups");}async ensureBackupDir(){try{await c.access(this.backupDir);}catch{await c.mkdir(this.backupDir,{recursive:!0});}}async createBackup(a,r){try{await this.ensureBackupDir();let t=i.join(this.backupDir,`${a}.json`),e={appName:a,config:r,timestamp:Date.now()};return await c.writeFile(t,JSON.stringify(e,null,2),"utf-8"),!0;}catch(r){return console.error(`Failed to create backup for ${a}:`,r),!1;}}async getBackup(a){try{let r=i.join(this.backupDir,`${a}.json`),t=await c.readFile(r,"utf-8");return JSON.parse(t).config;}catch(r){return console.error(`Failed to read backup for ${a}:`,r),null;}}async hasBackup(a){try{let r=i.join(this.backupDir,`${a}.json`);return await c.access(r),!0;}catch{return!1;}}async deleteBackup(a){try{let r=i.join(this.backupDir,`${a}.json`);return await c.unlink(r),!0;}catch(r){return console.error(`Failed to delete backup for ${a}:`,r),!1;}}}},"32818e82":function e(e,r,i,t){e._m(r),e.o(r,"WindsurfAdapter",()=>o);var s=e.w(i("fs")),a=e.w(i("path")),c=e.w(i("os")),n=i("454c8ae6");class o{name="Windsurf";icon="https://codeium.com/favicon.ico";color="#09B6A2";getPath(){return a.join(c.homedir(),"Library/Application Support/Windsurf/mcp_server_config.json");}async configExists(){return s.existsSync("/Applications/Windsurf.app");}async getServers(){let e=await n.FileService.readJSON(this.getPath());return e&&e.mcpServers?e.mcpServers:{};}async setServers(e){let r=await n.FileService.readJSON(this.getPath());return r||(r={}),r.mcpServers=e,await n.FileService.writeJSON(this.getPath(),r);}}},"3624460c":function e(e,t,s,r){e._m(t),e.o(t,"VSCodeAdapter",()=>l);var a=e.w(s("fs")),i=s("454c8ae6"),n=e.i(s("path")),o=e.i(s("os"));class l{name="VSCode";icon="https://code.visualstudio.com/favicon.ico";color="#007acc";getPath(){return e.f(n).join(e.f(o).homedir(),"Library/Application Support/Code/User/mcp.json");}async configExists(){return a.existsSync("/Applications/Visual Studio Code.app");}async getServers(){let e=await i.FileService.readJSON(this.getPath());if(!e||!e.servers)return{};let t={};for(let[s,r]of Object.entries(e.servers))r.command?t[s]={command:r.command,args:r.args||[],env:r.env,settings:{type:r.type,url:r.url,headers:r.headers,gallery:r.gallery,version:r.version}}:"http"===r.type&&r.url&&(t[s]={command:"",args:[],settings:{type:r.type,url:r.url,headers:r.headers,gallery:r.gallery,version:r.version}});return t;}async setServers(e){let t=await i.FileService.readJSON(this.getPath());t||(t={});let s=t.servers||{},r={};for(let[t,s]of Object.entries(e))s.settings?.type==="http"&&s.settings?.url?r[t]={type:s.settings.type,url:s.settings.url,...s.settings.headers&&{headers:s.settings.headers},...s.settings.gallery&&{gallery:s.settings.gallery},...s.settings.version&&{version:s.settings.version}}:s.command&&(r[t]={command:s.command,args:s.args||[],...s.env&&{env:s.env}});for(let[e,t]of Object.entries(s))r[e]||t.command||"http"===t.type&&t.url||(r[e]=t);return t.servers=r,await i.FileService.writeJSON(this.getPath(),t);}}},"454c8ae6":function t(t,r,e,i){t._m(r),t.o(r,"FileService",()=>o);var s=t.w(e("fs")),a=t.w(e("path")),n=t.w(e("os")),c=e("87f18120");class o{static expandPath(t){return t.startsWith("~/")?a.join(n.homedir(),t.slice(2)):t;}static async readJSON(t){let r=this.expandPath(t);try{if(!s.existsSync(r))return null;let t=await s.promises.readFile(r,"utf-8");return c.parseJSON(t);}catch(t){return console.error(`Error reading JSON from ${r}:`,t),null;}}static async writeJSON(t,r){let e=this.expandPath(t);try{let t=a.dirname(e);return s.existsSync(t)||await s.promises.mkdir(t,{recursive:!0}),await s.promises.writeFile(e,c.stringifyJSON(r,2),"utf-8"),!0;}catch(t){return console.error(`Error writing JSON to ${e}:`,t),!1;}}static async ensureFile(t,r={}){let e=this.expandPath(t);s.existsSync(e)||await this.writeJSON(t,r);}}},"4a89c147":function e(e,t,a,r){e._m(t),e.o(t,"ClaudeCodeAdapter",()=>l);var i=e.w(a("fs")),s=e.w(a("os")),c=e.w(a("path")),n=a("454c8ae6");class l{name="Claude Code";icon="https://claude.ai/favicon.ico";color="#d97706";getPath(){return c.join(s.homedir(),".claude.json");}async configExists(){let e=this.getPath();return!!i.existsSync(e)&&null!==await n.FileService.readJSON(e);}async getServers(){let e=await n.FileService.readJSON(this.getPath());return e&&e.mcpServers?e.mcpServers:{};}async setServers(e){let t=await n.FileService.readJSON(this.getPath());return t||(t={}),t.mcpServers=e,await n.FileService.writeJSON(this.getPath(),t);}}},"4d691808":function e(e,t,s,r){e._m(t),e.o(t,"ZedAdapter",()=>c);var n=e.w(s("fs")),i=e.w(s("path")),o=e.w(s("os")),a=s("454c8ae6");class c{name="Zed";icon="https://zed.dev/favicon_black_64.png";color="#606266";getPath(){return i.join(o.homedir(),".config/zed/settings.json");}async configExists(){return n.existsSync("/Applications/Zed.app")||n.existsSync("/Applications/Zed Preview.app");}async getServers(){let e=await a.FileService.readJSON(this.getPath());if(!e||!e.context_servers)return{};let t={};for(let[s,r]of Object.entries(e.context_servers))"custom"!==r.source&&(t[s]={command:r.command||"",args:r.args||[],source:r.source||"custom",env:r.env||void 0,settings:r.settings||void 0});return t;}async setServers(e){let t=await a.FileService.readJSON(this.getPath());t||(t={});let s=t.context_servers||{},r={};for(let[e,t]of Object.entries(s))"custom"===t.source&&(r[e]=t);let n={};for(let[t,s]of Object.entries(e))n[t]={command:s.command,args:s.args,env:s.env||null,settings:s.settings||void 0,enabled:s.enabled??!0};return t.context_servers={...r,...n},await a.FileService.writeJSON(this.getPath(),t);}}},"5aaf0170":function e(e,t,s,i){e._m(t),e.o(t,"MasterServerStore",()=>v);var a=s("electron"),r=e.w(s("path")),n=s("454c8ae6");class v{storePath;servers=new Map;initialized;constructor(){this.storePath=r.join(a.app.getPath("userData"),"mcp_servers.json"),this.initialized=this.initializeStore();}async initializeStore(){await n.FileService.ensureFile(this.storePath,{servers:[]}),await this.load();}async load(){let e=await n.FileService.readJSON(this.storePath);if(e&&e.servers)for(let t of(this.servers.clear(),e.servers))this.servers.set(t.id,t);}async save(){let e={servers:Array.from(this.servers.values()),lastUpdated:Date.now()};return await n.FileService.writeJSON(this.storePath,e);}async getAllServers(){return await this.initialized,Array.from(this.servers.values());}async getServer(e){return await this.initialized,this.servers.get(e);}async addServer(e){await this.initialized;let t=Date.now(),s={...e,createdAt:t,updatedAt:t};return this.servers.set(e.id,s),await this.save();}async updateServer(e,t){await this.initialized;let s=this.servers.get(e);if(!s)return!1;let i={...s,...t,id:e,updatedAt:Date.now()};return this.servers.set(e,i),await this.save();}async removeServer(e){return await this.initialized,!!this.servers.has(e)&&(this.servers.delete(e),await this.save());}async toggleServer(e,t){return await this.updateServer(e,{enabled:t});}async addAppToServer(e,t){await this.initialized;let s=this.servers.get(e);return!!s&&(!!s.apps.includes(t)||(s.apps.push(t),s.updatedAt=Date.now(),await this.save()));}async removeAppFromServer(e,t){await this.initialized;let s=this.servers.get(e);if(!s)return!1;let i=s.apps.indexOf(t);return -1===i||(s.apps.splice(i,1),s.updatedAt=Date.now(),await this.save());}async syncFromAppConfigs(e){for(let[t,s]of(await this.initialized,Object.entries(e)))if(!this.servers.get(t)){let e=Date.now(),i={id:t,name:t.charAt(0).toUpperCase()+t.slice(1),command:s.command,args:s.args,env:s.env,settings:s.settings,source:s.source,enabled:s.enabled??!0,permissions:"always_ask",apps:s.apps,iconUrl:void 0,description:void 0,createdAt:e,updatedAt:e};this.servers.set(t,i),await this.save();}}}},"5df6d6a0":function e(e,t,a,n){e._m(t),e.o(t,"APP_ADAPTERS",()=>b),e.o(t,"initCustomAppStore",()=>$),e.o(t,"getAvailableAdapters",()=>h);var o=a("0ca95b01"),d=a("4a89c147"),p=a("6f17f27f"),r=a("4d691808"),A=a("94d886ec"),l=a("3624460c"),c=a("32818e82"),i=a("666da5e9"),f=a("8fb0384e"),s=a("1e52c97c"),w=a("cc18dfe6"),u=a("290335cd"),g=a("f8cca18d"),C=a("8a78f2eb"),b=[new o.ClaudeAdapter,new d.ClaudeCodeAdapter,new p.MistralVibeAdapter,new r.ZedAdapter,new A.CursorAdapter,new l.VSCodeAdapter,new c.WindsurfAdapter,new i.GeminiAdapter,new f.QwenAdapter,new s.OpencodeAdapter,new w.KiloCodeAdapter,new u.ClineAdapter,new g.AntigravityAdapter];let m=null;function $(e){m=e;}async function h(){let e=[];for(let t of b){let a=await t.configExists();console.log(`[Detection] ${t.name}: ${a?"✓":"✗"} (${t.getPath()})`),a&&e.push(t);}if(m)for(let t of(await m.getAllApps())){let a=new C.CustomAppAdapter(t);console.log(`[Detection] ${a.name} (custom): ✓ (${a.getPath()})`),e.push(a);}return console.log(`[Detection] Total apps detected: ${e.length}/${b.length} built-in`),e;}var v=a("ea3ba68a");e._(t,"AppAdapter",v);var P=a("8a78f2eb");e._(t,"CustomAppAdapter",P);},"666da5e9":function e(e,t,i,r){e._m(t),e.o(t,"GeminiAdapter",()=>o);var a=e.w(i("fs")),s=e.w(i("os")),n=e.w(i("path")),c=i("454c8ae6");class o{name="Gemini CLI";icon="https://www.gstatic.com/lamda/images/gemini_favicon_f069958c85030456e93de685481c559f160ea06b.png";color="#4285f4";getPath(){return n.join(s.homedir(),".gemini/settings.json");}async configExists(){return a.existsSync(this.getPath());}async getServers(){let e=await c.FileService.readJSON(this.getPath());return e&&e.mcpServers?e.mcpServers:{};}async setServers(e){let t=await c.FileService.readJSON(this.getPath());t||(t={});let i={};for(let[t,r]of Object.entries(e)){let{enabled:e,...a}=r;i[t]=a;}return t.mcpServers=i,await c.FileService.writeJSON(this.getPath(),t);}}},"6f17f27f":function e(e,r,t,s){e._m(r),e.o(r,"MistralVibeAdapter",()=>_);var i=e.w(t("fs")),a=e.w(t("path")),n=e.w(t("os")),o=e.w(t("smol-toml"));class _{name="Mistral Vibe";icon="https://mistral.ai/favicon.ico";color="#F3D0C1";getPath(){return a.join(n.homedir(),".vibe/config.toml");}async configExists(){return i.existsSync(this.getPath());}async getServers(){let e=this.getPath();if(!i.existsSync(e))return{};try{let r=await i.promises.readFile(e,"utf-8"),t=o.parse(r),s={};if(t.mcp_servers&&Array.isArray(t.mcp_servers))for(let e of t.mcp_servers)e.name&&(s[e.name]={command:e.command||"",args:e.args||[],env:e.env,settings:{transport:e.transport,url:e.url,headers:e.headers,api_key_env:e.api_key_env,api_key_header:e.api_key_header,api_key_format:e.api_key_format}});return s;}catch(e){return console.error("Error reading Mistral Vibe config:",e),{};}}async setServers(e){let r=this.getPath(),t={};try{if(i.existsSync(r)){let e=await i.promises.readFile(r,"utf-8");t=o.parse(e);}let s=Object.entries(e).map(([e,r])=>{let t={name:e,transport:r.settings?.transport||"stdio",command:r.command,args:r.args,env:r.env};return r.settings&&(r.settings.url&&(t.url=r.settings.url),r.settings.headers&&(t.headers=r.settings.headers),r.settings.api_key_env&&(t.api_key_env=r.settings.api_key_env),r.settings.api_key_header&&(t.api_key_header=r.settings.api_key_header),r.settings.api_key_format&&(t.api_key_format=r.settings.api_key_format)),t;});t.mcp_servers=s;let n=o.stringify(t),_=a.dirname(r);return i.existsSync(_)||await i.promises.mkdir(_,{recursive:!0}),await i.promises.writeFile(r,n,"utf-8"),!0;}catch(e){return console.error("Error writing Mistral Vibe config:",e),!1;}}}},"799f0da0":function e(e,a,t,n){let r,i,s,o,l;e._m(a);var p=e.i(t("node:path")),c=t("node:url"),d=t("electron"),f=e.i(t("electron-liquid-glass")),g=t("01630ced"),m=t("5aaf0170"),u=t("0b861e2b"),w=t("324d43da"),v=t("0e9b2207"),h=t("5df6d6a0");let S=e.f(p).dirname(c.fileURLToPath(import.meta.url));process.env.ELECTRON_DISABLE_SECURITY_WARNINGS="true",d.app.requestSingleInstanceLock()||(d.app.quit(),process.exit(0));let y=null,A=[],M=new Map;function C(){let a=!!process.env.FARM_DEV_SERVER_URL;(y=new d.BrowserWindow({width:1200,height:800,transparent:!0,titleBarStyle:"hiddenInset",trafficLightPosition:{x:12,y:12},icon:function(){if("darwin"===process.platform){if(d.app.isPackaged)return e.f(p).join(process.resourcesPath,"..","Resources","electron.icns");let a=e.f(p).join(S,"..","..","build","icon.icns");if(global.nodeRequire("fs",!0).existsSync(a))return a;}return e.f(p).join(d.app.isPackaged?e.f(p).join(process.resourcesPath,"assets"):e.f(p).join(S,"..","..","src","renderer","assets"),"logo.svg");}(),webPreferences:{nodeIntegration:!1,contextIsolation:!0,preload:e.f(p).join(S,"preload.mjs")}})).setWindowButtonVisibility(!0),a?(y.loadURL(process.env.FARM_DEV_SERVER_URL),y.webContents.openDevTools()):y.loadFile(d.app.isPackaged?e.f(p).join(process.resourcesPath,"app.asar","dist","index.html"):e.f(p).join(S,"..","dist","index.html")),y.webContents.once("did-finish-load",()=>{if(console.log("Window loaded"),y&&"darwin"===process.platform){console.log("Adding glass");let a=y.getNativeWindowHandle();console.log(a);let t=e.f(f).addView(a,{cornerRadius:12,opaque:!1});e.f(f).unstable_setVariant(t,8);}});}d.app.whenReady().then(async()=>{for(let e of(l=new v.CustomAppStore,h.initCustomAppStore(l),A=await h.getAvailableAdapters(),r=new g.MCPConfigManager(A),i=new m.MasterServerStore,s=new u.MCPStudioService,o=new w.BackupService,A))if(await e.configExists()){let a=await r.readAppConfig(e);await o.createBackup(e.name,a),M.set(e.name,!0);}let e=await r.getAllServers();await i.syncFromAppConfigs(e),d.ipcMain.handle("get-apps",async()=>A.map(e=>{let a="isCustom"in e&&!0===e.isCustom;return{name:e.name,icon:e.icon,color:e.color,syncEnabled:M.get(e.name)??!0,isCustom:a};})),d.ipcMain.handle("get-all-servers",async()=>await i.getAllServers()),d.ipcMain.handle("get-app-servers",async(e,a)=>{let t=A.find(e=>e.name===a);if(!t)throw Error(`App not found: ${a}`);return await r.readAppConfig(t);}),d.ipcMain.handle("add-server",async(e,a,t,n,s)=>{let o=r.parseCommand(t),l={command:o.command,args:o.args,...n&&{env:n}},p=s||r.getAdapters().map(e=>e.name),c=await r.addServer(a,l,s);return c&&await i.addServer({id:a,name:a.charAt(0).toUpperCase()+a.slice(1),command:o.command,args:o.args,env:n,enabled:!0,permissions:"always_ask",apps:p}),c;}),d.ipcMain.handle("update-server",async(e,a,t,n,s)=>{let o=r.parseCommand(t),l={command:o.command,args:o.args,...n&&{env:n}},p=await r.updateServer(a,l,s);return p&&await i.updateServer(a,{command:o.command,args:o.args,env:n,apps:s}),p;}),d.ipcMain.handle("remove-server",async(e,a,t)=>{let n=await r.removeServer(a,t);if(n){if(t){for(let e of t)await i.removeAppFromServer(a,e);let e=await i.getServer(a);e&&0===e.apps.length&&await i.removeServer(a);}else await i.removeServer(a);}return n;}),d.ipcMain.handle("toggle-server",async(e,a,t,n)=>{let s=await i.getServer(a);if(!s)return!1;let o={command:s.command,args:s.args,env:s.env,settings:s.settings,enabled:t},l=await r.toggleServer(a,t,o,n);if(l){if(n){if(t)for(let e of n)await i.addAppToServer(a,e);else for(let e of n)await i.removeAppFromServer(a,e);}else await i.toggleServer(a,t);}return l;}),d.ipcMain.handle("parse-command",async(e,a)=>r.parseCommand(a)),d.ipcMain.handle("sync-servers",async()=>{let e=await i.getAllServers();for(let a of e)if(a.applyToAll&&a.enabled)for(let e of A.filter(e=>M.get(e.name)??!0).map(e=>e.name)){let t=A.find(a=>a.name===e);if(t){let e=await r.readAppConfig(t);e[a.id]={command:a.command,args:a.args,env:a.env,settings:a.settings,enabled:!0},await r.writeAppConfig(t,e);}}return e;}),d.ipcMain.handle("get-master-servers",async()=>await i.getAllServers()),d.ipcMain.handle("update-master-server",async(e,a,t)=>{let n=await i.updateServer(a,t);if(n&&void 0!==t.applyToAll){let e=await i.getServer(a);if(e){let a=A.filter(e=>M.get(e.name)??!0).map(e=>e.name);if(t.applyToAll&&e.enabled)for(let t of a){let a=A.find(e=>e.name===t);if(a){let t=await r.readAppConfig(a);t[e.id]={command:e.command,args:e.args,env:e.env,settings:e.settings,enabled:!0},await r.writeAppConfig(a,t);}}}}return n;}),d.ipcMain.handle("studio:start-server",async(e,a)=>{let t=await i.getServer(a);return t?await s.startServer(t):{success:!1,error:"Server not found"};}),d.ipcMain.handle("studio:stop-server",async(e,a)=>await s.stopServer(a)),d.ipcMain.handle("studio:list-tools",async(e,a)=>{try{return await s.listTools(a);}catch(e){throw Error(e instanceof Error?e.message:"Failed to list tools");}}),d.ipcMain.handle("studio:call-tool",async(e,a,t,n)=>{try{return await s.callTool(a,t,n);}catch(e){throw Error(e instanceof Error?e.message:"Failed to call tool");}}),d.ipcMain.handle("studio:is-server-running",async(e,a)=>s.isServerRunning(a)),d.ipcMain.handle("get-app-sync-state",async(e,a)=>M.get(a)??!0),d.ipcMain.handle("toggle-app-sync",async(e,a,t)=>{let n=A.find(e=>e.name===a);if(!n)throw Error(`App not found: ${a}`);if(!t){let e=await o.getBackup(a);e&&await r.writeAppConfig(n,e);}return M.set(a,t),!0;}),d.ipcMain.handle("has-app-backup",async(e,a)=>await o.hasBackup(a)),d.ipcMain.handle("get-app-backup",async(e,a)=>await o.getBackup(a)),d.ipcMain.handle("get-app-current-config",async(e,a)=>{let t=A.find(e=>e.name===a);if(!t)throw Error(`App not found: ${a}`);return await r.readAppConfig(t);}),d.ipcMain.handle("get-app-applied-servers",async(e,a)=>(await i.getAllServers()).filter(e=>e.applyToAll||e.apps.includes(a))),d.ipcMain.handle("export-app-data",async()=>{let e=new(global.nodeRequire("adm-zip",!0)),a=await i.getAllServers(),t={};a.forEach(e=>{t[e.id]={command:e.command,args:e.args,...e.env&&{env:e.env}};}),e.addFile("mcp.json",Buffer.from(JSON.stringify({mcpServers:t},null,2)));let n={apps:A.map(e=>({name:e.name,icon:e.icon,color:e.color,syncEnabled:M.get(e.name)??!0})),masterServers:a,version:d.app.getVersion(),exportDate:new Date().toISOString()};for(let a of(e.addFile("app-data.json",Buffer.from(JSON.stringify(n,null,2))),A)){let t=await o.getBackup(a.name);t&&e.addFile(`backups/${a.name}.json`,Buffer.from(JSON.stringify({config:t},null,2)));}return e.toBuffer();}),d.ipcMain.handle("import-app-data-zip",async(e,a)=>{let t=new(global.nodeRequire("adm-zip",!0))(a),n=t.getEntry("app-data.json");if(n){let e=JSON.parse(n.getData().toString("utf8"));if(e.masterServers)for(let a of e.masterServers)await i.addServer(a);if(e.apps)for(let a of e.apps)M.set(a.name,a.syncEnabled??!0);}for(let e of t.getEntries().filter(e=>e.entryName.startsWith("backups/"))){let a=e.entryName.replace("backups/","").replace(".json",""),t=JSON.parse(e.getData().toString("utf8"));t.config&&await o.createBackup(a,t.config);}return!0;}),d.ipcMain.handle("get-custom-apps",async()=>await l.getAllApps()),d.ipcMain.handle("add-custom-app",async(e,a)=>{let t=await l.addApp(a);if(t){let e=new h.CustomAppAdapter(a);A.push(e),r=new g.MCPConfigManager(A);}return t;}),d.ipcMain.handle("remove-custom-app",async(e,a)=>{let t=await l.getApp(a);if(t){let e=await l.removeApp(a);return e&&(A=A.filter(e=>e.name!==t.name),r=new g.MCPConfigManager(A)),e;}return!1;}),C(),y&&s.setMainWindow(y),d.app.on("activate",()=>{0===d.BrowserWindow.getAllWindows().length&&C();});}),d.app.on("window-all-closed",()=>{s&&s.stopAllServers(),"darwin"!==process.platform&&d.app.quit();});},"87f18120":function n(n,t,i,e){function r(n){let t=n.split("\n"),i=[];for(let n of t){if(n.trim().startsWith("//"))continue;let t=n.indexOf("//");if(-1!==t){let e=n.substring(0,t);if(!function(n){let t=!1,i=!1,e="";for(let r=0;r<n.length;r++){let f=n[r];if(i){i=!1;continue;}if("\\"===f){i=!0;continue;}'"'!==f&&"'"!==f||t?f===e&&t&&(t=!1,e=""):(t=!0,e=f);}return t;}(e)){i.push(e);continue;}}i.push(n);}let e=i.join("\n");return JSON.parse(e=e.replace(/,(\s*[}\]])/g,"$1"));}function f(n,t=2){return JSON.stringify(n,null,t);}n._m(t),n.o(t,"parseJSON",()=>r),n.o(t,"stringifyJSON",()=>f);},"8a78f2eb":function e(e,t,r,i){e._m(t),e.o(t,"CustomAppAdapter",()=>l);var n=e.w(r("fs")),s=e.w(r("path")),o=e.w(r("os")),a=e.w(r("smol-toml")),c=r("454c8ae6");class l{name;icon;color;isCustom=!0;config;constructor(e){this.config=e,this.name=e.name,this.icon=e.icon||"ph:puzzle-piece-light",this.color=e.color||"#888888";}getPath(){return this.config.configPath.replace(/^~/,o.homedir());}async configExists(){return!0;}async getServers(){let e=this.getPath();if(!n.existsSync(e))return{};try{if("toml"===this.config.configFormat){let t=await n.promises.readFile(e,"utf-8"),r=a.parse(t);return this.extractServers(r);}{let t=await c.FileService.readJSON(e);return this.extractServers(t);}}catch(e){return console.error(`Error reading ${this.name} config:`,e),{};}}extractServers(e){if(!e)return{};let t=this.config.configKey.split("."),r=e;for(let e of t){if(!r||"object"!=typeof r||!(e in r))return{};r=r[e];}if(!r||"object"!=typeof r)return{};if(Array.isArray(r)){let e={};for(let t of r)t.name&&(e[t.name]={command:t.command||"",args:t.args||[],env:t.env,settings:t});return e;}let i={};for(let[e,t]of Object.entries(r))i[e]={command:t.command||"",args:t.args||[],env:t.env,settings:t.settings||t};return i;}async setServers(e){let t=this.getPath();try{let r={};if(n.existsSync(t)){if("toml"===this.config.configFormat){let e=await n.promises.readFile(t,"utf-8");r=a.parse(e);}else r=await c.FileService.readJSON(t)||{};}let i=this.config.configKey.split("."),o=r;for(let e=0;e<i.length-1;e++){let t=i[e];t in o||(o[t]={}),o=o[t];}let l=i[i.length-1],f={};for(let[t,r]of Object.entries(e))f[t]={command:r.command,args:r.args||[],...r.env&&{env:r.env}};o[l]=f;let m=s.dirname(t);if(n.existsSync(m)||await n.promises.mkdir(m,{recursive:!0}),"toml"===this.config.configFormat){let e=a.stringify(r);await n.promises.writeFile(t,e,"utf-8");}else await c.FileService.writeJSON(t,r);return!0;}catch(e){return console.error(`Error writing ${this.name} config:`,e),!1;}}}},"8fb0384e":function e(e,t,s,r){e._m(t),e.o(t,"QwenAdapter",()=>w);var a=e.w(s("fs")),i=e.w(s("os")),n=e.w(s("path")),c=s("454c8ae6");class w{name="Qwen Code CLI";icon="https://assets.alicdn.com/g/qwenweb/qwen-webui-fe/0.0.191/static/favicon.png";color="#5f46e8";getPath(){return n.join(i.homedir(),".qwen/settings.json");}async configExists(){return a.existsSync(this.getPath());}async getServers(){let e=await c.FileService.readJSON(this.getPath());return e&&e.mcpServers?e.mcpServers:{};}async setServers(e){let t=await c.FileService.readJSON(this.getPath());return t||(t={}),t.mcpServers=e,await c.FileService.writeJSON(this.getPath(),t);}}},"94d886ec":function r(r,e,t,s){r._m(e),r.o(e,"CursorAdapter",()=>n);var a=r.w(t("fs")),i=r.w(t("path")),c=r.w(t("os")),o=t("454c8ae6");class n{name="Cursor";icon="https://www.cursor.com/favicon.ico";color="#000000";getPath(){return i.join(c.homedir(),"Library/Application Support/Cursor/User/globalStorage/mcp.json");}async configExists(){return a.existsSync("/Applications/Cursor.app");}async getServers(){let r=await o.FileService.readJSON(this.getPath());return r&&r.mcpServers?r.mcpServers:{};}async setServers(r){let e=await o.FileService.readJSON(this.getPath());return e||(e={}),e.mcpServers=r,await o.FileService.writeJSON(this.getPath(),e);}}},"cc18dfe6":function t(t,e,i,o){t._m(e),t.o(e,"KiloCodeAdapter",()=>l);var r=t.w(i("fs")),s=t.w(i("os")),n=t.w(i("path")),a=i("454c8ae6");class l{name="Kilo Code";icon="https://kilocode.ai/docs/img/kilo-v1.svg";color="#ede749";getConfigPaths(){let t=s.homedir();return[n.join(t,"Library/Application Support/Code/User/globalStorage/kilocode.kilo-code/settings/mcp_settings.json"),n.join(t,"Library/Application Support/Cursor/User/globalStorage/kilocode.kilo-code/settings/mcp_settings.json"),n.join(t,"Library/Application Support/VSCodium/User/globalStorage/kilocode.kilo-code/settings/mcp_settings.json")];}findExistingPath(){for(let t of this.getConfigPaths())if(r.existsSync(t))return t;return null;}getPath(){return this.findExistingPath()||this.getConfigPaths()[0];}async configExists(){return null!==this.findExistingPath();}async getServers(){let t=await a.FileService.readJSON(this.getPath());return t&&t.mcpServers?t.mcpServers:{};}async setServers(t){let e=await a.FileService.readJSON(this.getPath());return e||(e={}),e.mcpServers=t,await a.FileService.writeJSON(this.getPath(),e);}}},"ea3ba68a":function n(n,c,f,i){},"f8cca18d":function e(e,t,i,r){e._m(t),e.o(t,"AntigravityAdapter",()=>o);var a=e.w(i("fs")),s=i("454c8ae6"),n=e.i(i("path")),c=e.i(i("os"));class o{name="Google Antigravity";icon="https://antigravity.google/favicon.ico";color="#1a73e8";getPath(){return e.f(n).join(e.f(c).homedir(),".gemini/antigravity/mcp_config.json");}async configExists(){return a.existsSync(this.getPath());}async getServers(){let e=await s.FileService.readJSON(this.getPath());return e&&e.mcpServers?e.mcpServers:{};}async setServers(e){let t=await s.FileService.readJSON(this.getPath());return t||(t={}),t.mcpServers=e,await s.FileService.writeJSON(this.getPath(),t);}}},});global['e20309b3317686f6c8a7cfe5559430f9'].__farm_module_system__.setInitialLoadedResources([]);global['e20309b3317686f6c8a7cfe5559430f9'].__farm_module_system__.setDynamicModuleResourcesMap([],{  });var farmModuleSystem = global['e20309b3317686f6c8a7cfe5559430f9'].__farm_module_system__;farmModuleSystem.bootstrap();var entry = farmModuleSystem.require("799f0da0");
+import __farmNodeModule from 'node:module';global.nodeRequire = __farmNodeModule.createRequire(import.meta.url);global['e20309b3317686f6c8a7cfe5559430f9'] = {__FARM_TARGET_ENV__: 'node'};function _interop_require_default(obj) {
+    return obj && obj.__esModule ? obj : {
+        default: obj
+    };
+}function _export_star(from, to) {
+    Object.keys(from).forEach(function(k) {
+        if (k !== "default" && !Object.prototype.hasOwnProperty.call(to, k)) {
+            Object.defineProperty(to, k, {
+                enumerable: true,
+                get: function() {
+                    return from[k];
+                }
+            });
+        }
+    });
+    return from;
+}function _interop_require_wildcard(obj, nodeInterop) {
+    if (!nodeInterop && obj && obj.__esModule) return obj;
+    if (obj === null || typeof obj !== "object" && typeof obj !== "function") return {
+        default: obj
+    };
+    var cache = _getRequireWildcardCache(nodeInterop);
+    if (cache && cache.has(obj)) return cache.get(obj);
+    var newObj = {
+        __proto__: null
+    };
+    var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor;
+    for(var key in obj){
+        if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) {
+            var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null;
+            if (desc && (desc.get || desc.set)) Object.defineProperty(newObj, key, desc);
+            else newObj[key] = obj[key];
+        }
+    }
+    newObj.default = obj;
+    if (cache) cache.set(obj, newObj);
+    return newObj;
+}function _getRequireWildcardCache(nodeInterop) {
+    if (typeof WeakMap !== "function") return null;
+    var cacheBabelInterop = new WeakMap();
+    var cacheNodeInterop = new WeakMap();
+    return (_getRequireWildcardCache = function(nodeInterop) {
+        return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
+    })(nodeInterop);
+}const __global_this__ = typeof globalThis !== 'undefined' ? globalThis : window;
+var index_js_default = {
+    name: 'farm-runtime-import-meta',
+    _moduleSystem: {},
+    bootstrap (system) {
+        this._moduleSystem = system;
+    },
+    moduleCreated (module) {
+        const publicPath = this._moduleSystem.publicPaths?.[0] || "";
+        const isSSR = this._moduleSystem.targetEnv === "node";
+        const { location } = __global_this__;
+        let baseUrl;
+        try {
+            baseUrl = (location ? new URL(publicPath, `${location.protocol}//${location.host}`) : new URL(module.resource_pot)).pathname;
+        } catch (_) {
+            baseUrl = '/';
+        }
+        module.meta.env = {
+            ...{
+                "FARM_DEV_SERVER_URL": "http://localhost:5173",
+                "NODE_ENV": "production",
+                "mode": "production"
+            } ?? {},
+            dev: process.env.NODE_ENV === 'development',
+            prod: process.env.NODE_ENV === 'production',
+            BASE_URL: baseUrl,
+            SSR: isSSR
+        };
+        const url = location ? `${location.protocol}//${location.host}${publicPath.replace(/\/$/, '')}/${module.id}?t=${Date.now()}` : module.resource_pot;
+        module.meta.url = url;
+    }
+};
+
+class Module {
+    constructor(id, require){
+        this.resource_pot = "";
+        this.id = id;
+        this.exports = {};
+        this.meta = {
+            env: {}
+        };
+        this.require = require;
+    }
+    o(to, to_k, get) {
+        Object.defineProperty(to, to_k, {
+            enumerable: true,
+            get
+        });
+    }
+    d(to, to_k, val) {
+        this.o(to, to_k, function() {
+            return val;
+        });
+    }
+    _m(to) {
+        const key = '__esModule';
+        if (to[key]) return;
+        Object.defineProperty(to, key, {
+            value: true
+        });
+    }
+    _e(to, from) {
+        Object.keys(from).forEach(function(k) {
+            if (k !== "default" && !Object.prototype.hasOwnProperty.call(to, k)) {
+                Object.defineProperty(to, k, {
+                    value: from[k],
+                    enumerable: true,
+                    configurable: true
+                });
+            }
+        });
+        return from;
+    }
+    i(obj) {
+        return obj && obj.__esModule ? obj : {
+            default: obj
+        };
+    }
+    _g(nodeInterop) {
+        if (typeof WeakMap !== "function") return null;
+        var cacheBabelInterop = new WeakMap();
+        var cacheNodeInterop = new WeakMap();
+        return (this._g = function(nodeInterop) {
+            return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
+        })(nodeInterop);
+    }
+    w(obj, nodeInterop) {
+        if (!nodeInterop && obj && obj.__esModule) return obj;
+        if (obj === null || typeof obj !== "object" && typeof obj !== "function") return {
+            default: obj
+        };
+        var cache = this._g(nodeInterop);
+        if (cache && cache.has(obj)) return cache.get(obj);
+        var newObj = {
+            __proto__: null
+        };
+        var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor;
+        for(var key$1 in obj){
+            if (key$1 !== "default" && Object.prototype.hasOwnProperty.call(obj, key$1)) {
+                var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key$1) : null;
+                if (desc && (desc.get || desc.set)) Object.defineProperty(newObj, key$1, desc);
+                else newObj[key$1] = obj[key$1];
+            }
+        }
+        newObj.default = obj;
+        if (cache) cache.set(obj, newObj);
+        return newObj;
+    }
+    _(to, to_k, from, from_k) {
+        this.d(to, to_k, from[from_k || to_k]);
+    }
+    p(to, val) {
+        for (const key$2 of Object.keys(val)){
+            const newKey = to[key$2];
+            if (newKey && !Object.prototype.hasOwnProperty.call(val, newKey)) {
+                this.d(val, newKey, val[key$2]);
+            }
+        }
+    }
+    f(v) {
+        if (typeof v.default !== 'undefined') {
+            return v.default;
+        }
+        return v;
+    }
+}
+
+class FarmRuntimePluginContainer {
+    constructor(plugins){
+        this.plugins = [];
+        this.plugins = plugins;
+    }
+    hookSerial(hookName, ...args) {
+        for (const plugin of this.plugins){
+            const hook = plugin[hookName];
+            if (hook) {
+                hook.apply(plugin, args);
+            }
+        }
+    }
+    hookBail(hookName, ...args) {
+        for (const plugin$1 of this.plugins){
+            const hook$1 = plugin$1[hookName];
+            if (hook$1) {
+                const result = hook$1.apply(plugin$1, args);
+                if (result) {
+                    return result;
+                }
+            }
+        }
+        return undefined;
+    }
+}
+
+const __farm_global_this__ = global['e20309b3317686f6c8a7cfe5559430f9'];
+const __global_this__$1 = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : {};
+const targetEnv = __farm_global_this__.__FARM_TARGET_ENV__ || 'node';
+const isBrowser = targetEnv === 'browser' && __global_this__$1.document;
+class ResourceLoader {
+    constructor(moduleSystem, publicPaths){
+        this.moduleSystem = moduleSystem;
+        this._loadedResources = {};
+        this._loadingResources = {};
+        this.publicPaths = publicPaths;
+    }
+    load(resource, index = 0) {
+        if (!isBrowser) {
+            const result$1 = this.moduleSystem.pluginContainer.hookBail('loadResource', resource);
+            if (result$1) {
+                return result$1.then((res)=>{
+                    if (!res.success && res.retryWithDefaultResourceLoader) {
+                        if (resource.type === 0) {
+                            return this._loadScript(`./${resource.path}`);
+                        } else if (resource.type === 1) {
+                            return this._loadLink(`./${resource.path}`);
+                        }
+                    } else if (!res.success) {
+                        throw new Error(`[Farm] Failed to load resource: "${resource.path}, type: ${resource.type}". Original Error: ${res.err}`);
+                    }
+                });
+            } else {
+                if (resource.type === 0) {
+                    return this._loadScript(`./${resource.path}`);
+                } else if (resource.type === 1) {
+                    return this._loadLink(`./${resource.path}`);
+                }
+            }
+        }
+        const publicPath = this.publicPaths[index];
+        const url = `${publicPath.endsWith('/') ? publicPath.slice(0, -1) : publicPath}/${resource.path}`;
+        if (this._loadedResources[resource.path]) {
+            return Promise.resolve();
+        } else if (this._loadingResources[resource.path]) {
+            return this._loadingResources[resource.path];
+        }
+        const result$2 = this.moduleSystem.pluginContainer.hookBail('loadResource', resource);
+        if (result$2) {
+            return result$2.then((res)=>{
+                if (res.success) {
+                    this.setLoadedResource(resource.path);
+                } else if (res.retryWithDefaultResourceLoader) {
+                    return this._load(url, resource, index);
+                } else {
+                    throw new Error(`[Farm] Failed to load resource: "${resource.path}, type: ${resource.type}". Original Error: ${res.err}`);
+                }
+            });
+        } else {
+            return this._load(url, resource, index);
+        }
+    }
+    setLoadedResource(path, loaded = true) {
+        this._loadedResources[path] = loaded;
+    }
+    isResourceLoaded(path) {
+        return this._loadedResources[path];
+    }
+    _load(url, resource, index) {
+        let promise = Promise.resolve();
+        if (resource.type === 0) {
+            promise = this._loadScript(url);
+        } else if (resource.type === 1) {
+            promise = this._loadLink(url);
+        }
+        this._loadingResources[resource.path] = promise;
+        promise.then(()=>{
+            this._loadedResources[resource.path] = true;
+            this._loadingResources[resource.path] = null;
+        }).catch((e)=>{
+            console.warn(`[Farm] Failed to load resource "${url}" using publicPath: ${this.publicPaths[index]}`);
+            index++;
+            if (index < this.publicPaths.length) {
+                return this._load(url, resource, index);
+            } else {
+                this._loadingResources[resource.path] = null;
+                throw new Error(`[Farm] Failed to load resource: "${resource.path}, type: ${resource.type}". ${e}`);
+            }
+        });
+        return promise;
+    }
+    _loadScript(path) {
+        if ("node" !== 'browser') {
+            return import(path);
+        } else {
+            return new Promise((resolve, reject)=>{
+                const script = document.createElement('script');
+                script.src = path;
+                document.body.appendChild(script);
+                script.onload = ()=>{
+                    resolve();
+                };
+                script.onerror = (e)=>{
+                    reject(e);
+                };
+            });
+        }
+    }
+    _loadLink(path) {
+        if ("node" !== 'browser') {
+            return Promise.resolve();
+        } else {
+            return new Promise((resolve, reject)=>{
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = path;
+                document.head.appendChild(link);
+                link.onload = ()=>{
+                    resolve();
+                };
+                link.onerror = (e)=>{
+                    reject(e);
+                };
+            });
+        }
+    }
+}
+var resource_loader_js_ns = {
+    ResourceLoader: ResourceLoader,
+    __farm_global_this__: __farm_global_this__,
+    __global_this__: __global_this__$1,
+    isBrowser: isBrowser,
+    targetEnv: targetEnv,
+    __esModule: true
+};
+
+class ModuleSystem {
+    constructor(){
+        this.dynamicResources = [];
+        this.modules = {};
+        this.cache = {};
+        this.publicPaths = [];
+        this.dynamicModuleResourcesMap = {};
+        this.resourceLoader = new ResourceLoader(this, this.publicPaths);
+        this.pluginContainer = new FarmRuntimePluginContainer([]);
+        this.targetEnv = targetEnv;
+        this.externalModules = {};
+        this.reRegisterModules = false;
+    }
+    require(moduleId, isCJS = false) {
+        if (this.cache[moduleId]) {
+            const shouldSkip = this.pluginContainer.hookBail("readModuleCache", this.cache[moduleId]);
+            if (!shouldSkip) {
+                const cachedModule = this.cache[moduleId];
+                return cachedModule.initializer || cachedModule.exports;
+            }
+        }
+        const initializer = this.modules[moduleId];
+        if (!initializer) {
+            if (this.externalModules[moduleId]) {
+                const exports = this.externalModules[moduleId];
+                if (isCJS) {
+                    return exports.default || exports;
+                }
+                return exports;
+            }
+            if ((this.targetEnv === "node" || !isBrowser) && nodeRequire) {
+                const externalModule = nodeRequire(moduleId);
+                return externalModule;
+            }
+            this.pluginContainer.hookSerial("moduleNotFound", moduleId);
+            console.debug(`[Farm] Module "${moduleId}" is not registered`);
+            return {};
+        }
+        const module = new Module(moduleId, this.require.bind(this));
+        module.resource_pot = initializer.__farm_resource_pot__;
+        this.pluginContainer.hookSerial("moduleCreated", module);
+        this.cache[moduleId] = module;
+        if (!__global_this__$1.require) {
+            __global_this__$1.require = this.require.bind(this);
+        }
+        const result$3 = initializer(module, module.exports, this.require.bind(this), this.farmDynamicRequire.bind(this));
+        if (result$3 && result$3 instanceof Promise) {
+            module.initializer = result$3.then(()=>{
+                this.pluginContainer.hookSerial("moduleInitialized", module);
+                module.initializer = undefined;
+                return module.exports;
+            });
+            return module.initializer;
+        } else {
+            this.pluginContainer.hookSerial("moduleInitialized", module);
+            return module.exports;
+        }
+    }
+    farmDynamicRequire(moduleId) {
+        if (this.modules[moduleId]) {
+            const exports$1 = this.require(moduleId);
+            if (exports$1.__farm_async) {
+                return exports$1.default;
+            } else {
+                return Promise.resolve(exports$1);
+            }
+        }
+        return this.loadDynamicResources(moduleId);
+    }
+    loadDynamicResourcesOnly(moduleId, force = false) {
+        const resources = this.dynamicModuleResourcesMap[moduleId].map((index)=>this.dynamicResources[index]);
+        if (!resources || resources.length === 0) {
+            throw new Error(`Dynamic imported module "${moduleId}" does not belong to any resource`);
+        }
+        if (force) {
+            this.clearCache(moduleId);
+        }
+        return Promise.all(resources.map((resource)=>{
+            if (force) {
+                const resourceLoaded = this.resourceLoader.isResourceLoaded(resource.path);
+                this.resourceLoader.setLoadedResource(resource.path, false);
+                if (resourceLoaded) {
+                    return this.resourceLoader.load({
+                        ...resource,
+                        path: `${resource.path}?t=${Date.now()}`
+                    });
+                }
+            }
+            return this.resourceLoader.load(resource);
+        }));
+    }
+    loadDynamicResources(moduleId, force = false) {
+        const resources$1 = this.dynamicModuleResourcesMap[moduleId].map((index)=>this.dynamicResources[index]);
+        return this.loadDynamicResourcesOnly(moduleId, force).then(()=>{
+            if (resources$1.every((resource)=>resource.type !== 0)) {
+                return;
+            }
+            if (!this.modules[moduleId]) {
+                throw new Error(`Dynamic imported module "${moduleId}" is not registered.`);
+            }
+            const result$4 = this.require(moduleId);
+            if (result$4.__farm_async) {
+                return result$4.default;
+            } else {
+                return result$4;
+            }
+        }).catch((err)=>{
+            console.error(`[Farm] Error loading dynamic module "${moduleId}"`, err);
+            throw err;
+        });
+    }
+    register(moduleId, initializer) {
+        if (this.modules[moduleId] && !this.reRegisterModules) {
+            console.warn(`Module "${moduleId}" has registered! It should not be registered twice`);
+            return;
+        }
+        this.modules[moduleId] = initializer;
+    }
+    update(moduleId, init) {
+        this.modules[moduleId] = init;
+        this.clearCache(moduleId);
+    }
+    delete(moduleId) {
+        if (this.modules[moduleId]) {
+            this.clearCache(moduleId);
+            delete this.modules[moduleId];
+            return true;
+        } else {
+            return false;
+        }
+    }
+    getModuleUrl(moduleId) {
+        const publicPath$1 = this.publicPaths[0] ?? "";
+        if (isBrowser) {
+            const url$1 = `${window.location.protocol}//${window.location.host}${publicPath$1.endsWith("/") ? publicPath$1.slice(0, -1) : publicPath$1}/${this.modules[moduleId].__farm_resource_pot__}`;
+            return url$1;
+        } else {
+            return this.modules[moduleId].__farm_resource_pot__;
+        }
+    }
+    getCache(moduleId) {
+        return this.cache[moduleId];
+    }
+    clearCache(moduleId) {
+        if (this.cache[moduleId]) {
+            delete this.cache[moduleId];
+            return true;
+        } else {
+            return false;
+        }
+    }
+    setInitialLoadedResources(resources) {
+        for (const resource of resources){
+            this.resourceLoader.setLoadedResource(resource);
+        }
+    }
+    setDynamicModuleResourcesMap(dynamicResources, dynamicModuleResourcesMap) {
+        this.dynamicResources = dynamicResources;
+        this.dynamicModuleResourcesMap = dynamicModuleResourcesMap;
+    }
+    setPublicPaths(publicPaths) {
+        this.publicPaths = publicPaths;
+        this.resourceLoader.publicPaths = this.publicPaths;
+    }
+    setPlugins(plugins) {
+        this.pluginContainer.plugins = plugins;
+    }
+    addPlugin(plugin) {
+        if (this.pluginContainer.plugins.every((p)=>p.name !== plugin.name)) {
+            this.pluginContainer.plugins.push(plugin);
+        }
+    }
+    removePlugin(pluginName) {
+        this.pluginContainer.plugins = this.pluginContainer.plugins.filter((p)=>p.name !== pluginName);
+    }
+    setExternalModules(externalModules) {
+        Object.assign(this.externalModules, externalModules || {});
+    }
+    bootstrap() {
+        this.pluginContainer.hookSerial("bootstrap", this);
+    }
+}
+
+__farm_global_this__.__farm_module_system__ = (function() {
+    const moduleSystem = new ModuleSystem();
+    return function() {
+        return moduleSystem;
+    };
+})()();
+global['e20309b3317686f6c8a7cfe5559430f9'].__farm_module_system__.setPlugins([
+    index_js_default
+]);
+import * as __farm_external_module__modelcontextprotocol_sdk_client_index_js from "@modelcontextprotocol/sdk/client/index.js";import * as __farm_external_module__modelcontextprotocol_sdk_client_sse_js from "@modelcontextprotocol/sdk/client/sse.js";import * as __farm_external_module__modelcontextprotocol_sdk_client_stdio_js from "@modelcontextprotocol/sdk/client/stdio.js";import * as __farm_external_module__modelcontextprotocol_sdk_client_streamableHttp_js from "@modelcontextprotocol/sdk/client/streamableHttp.js";import * as __farm_external_module_child_process from "child_process";import * as __farm_external_module_electron from "electron";import * as __farm_external_module_electron_liquid_glass from "electron-liquid-glass";import * as __farm_external_module_fs from "fs";import * as __farm_external_module_fs_promises from "fs/promises";import * as __farm_external_module_node_path from "node:path";import * as __farm_external_module_node_url from "node:url";import * as __farm_external_module_os from "os";import * as __farm_external_module_path from "path";import * as __farm_external_module_smol_toml from "smol-toml";global['e20309b3317686f6c8a7cfe5559430f9'].__farm_module_system__.setExternalModules({"@modelcontextprotocol/sdk/client/index.js": __farm_external_module__modelcontextprotocol_sdk_client_index_js && __farm_external_module__modelcontextprotocol_sdk_client_index_js.default && !__farm_external_module__modelcontextprotocol_sdk_client_index_js.__esModule ? {...__farm_external_module__modelcontextprotocol_sdk_client_index_js,__esModule:true} : {...__farm_external_module__modelcontextprotocol_sdk_client_index_js},"@modelcontextprotocol/sdk/client/sse.js": __farm_external_module__modelcontextprotocol_sdk_client_sse_js && __farm_external_module__modelcontextprotocol_sdk_client_sse_js.default && !__farm_external_module__modelcontextprotocol_sdk_client_sse_js.__esModule ? {...__farm_external_module__modelcontextprotocol_sdk_client_sse_js,__esModule:true} : {...__farm_external_module__modelcontextprotocol_sdk_client_sse_js},"@modelcontextprotocol/sdk/client/stdio.js": __farm_external_module__modelcontextprotocol_sdk_client_stdio_js && __farm_external_module__modelcontextprotocol_sdk_client_stdio_js.default && !__farm_external_module__modelcontextprotocol_sdk_client_stdio_js.__esModule ? {...__farm_external_module__modelcontextprotocol_sdk_client_stdio_js,__esModule:true} : {...__farm_external_module__modelcontextprotocol_sdk_client_stdio_js},"@modelcontextprotocol/sdk/client/streamableHttp.js": __farm_external_module__modelcontextprotocol_sdk_client_streamableHttp_js && __farm_external_module__modelcontextprotocol_sdk_client_streamableHttp_js.default && !__farm_external_module__modelcontextprotocol_sdk_client_streamableHttp_js.__esModule ? {...__farm_external_module__modelcontextprotocol_sdk_client_streamableHttp_js,__esModule:true} : {...__farm_external_module__modelcontextprotocol_sdk_client_streamableHttp_js},"child_process": __farm_external_module_child_process && __farm_external_module_child_process.default && !__farm_external_module_child_process.__esModule ? {...__farm_external_module_child_process,__esModule:true} : {...__farm_external_module_child_process},"electron": __farm_external_module_electron && __farm_external_module_electron.default && !__farm_external_module_electron.__esModule ? {...__farm_external_module_electron,__esModule:true} : {...__farm_external_module_electron},"electron-liquid-glass": __farm_external_module_electron_liquid_glass && __farm_external_module_electron_liquid_glass.default && !__farm_external_module_electron_liquid_glass.__esModule ? {...__farm_external_module_electron_liquid_glass,__esModule:true} : {...__farm_external_module_electron_liquid_glass},"fs": __farm_external_module_fs && __farm_external_module_fs.default && !__farm_external_module_fs.__esModule ? {...__farm_external_module_fs,__esModule:true} : {...__farm_external_module_fs},"fs/promises": __farm_external_module_fs_promises && __farm_external_module_fs_promises.default && !__farm_external_module_fs_promises.__esModule ? {...__farm_external_module_fs_promises,__esModule:true} : {...__farm_external_module_fs_promises},"node:path": __farm_external_module_node_path && __farm_external_module_node_path.default && !__farm_external_module_node_path.__esModule ? {...__farm_external_module_node_path,__esModule:true} : {...__farm_external_module_node_path},"node:url": __farm_external_module_node_url && __farm_external_module_node_url.default && !__farm_external_module_node_url.__esModule ? {...__farm_external_module_node_url,__esModule:true} : {...__farm_external_module_node_url},"os": __farm_external_module_os && __farm_external_module_os.default && !__farm_external_module_os.__esModule ? {...__farm_external_module_os,__esModule:true} : {...__farm_external_module_os},"path": __farm_external_module_path && __farm_external_module_path.default && !__farm_external_module_path.__esModule ? {...__farm_external_module_path,__esModule:true} : {...__farm_external_module_path},"smol-toml": __farm_external_module_smol_toml && __farm_external_module_smol_toml.default && !__farm_external_module_smol_toml.__esModule ? {...__farm_external_module_smol_toml,__esModule:true} : {...__farm_external_module_smol_toml}});(function(_){var filename = ((function(){return import.meta.url})());for(var r in _){_[r].__farm_resource_pot__=filename;global['e20309b3317686f6c8a7cfe5559430f9'].__farm_module_system__.register(r,_[r])}})({"01630ced":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "MCPConfigManager", ()=>MCPConfigManager);
+    class MCPConfigManager {
+        adapters;
+        constructor(adapters){
+            this.adapters = adapters;
+        }
+        getAdapters() {
+            return this.adapters;
+        }
+        parseCommand(command) {
+            const parts = command.trim().split(/\s+/);
+            if (parts.length === 0) {
+                throw new Error('Empty command');
+            }
+            return {
+                command: parts[0],
+                args: parts.slice(1)
+            };
+        }
+        async readAppConfig(adapter) {
+            return await adapter.getServers();
+        }
+        async writeAppConfig(adapter, servers) {
+            return await adapter.setServers(servers);
+        }
+        async getAllServers() {
+            const allServers = {};
+            for (const adapter of this.adapters){
+                const servers = await this.readAppConfig(adapter);
+                for (const [key, server] of Object.entries(servers)){
+                    if (allServers[key]) {
+                        if (!allServers[key].apps.includes(adapter.name)) {
+                            allServers[key].apps.push(adapter.name);
+                        }
+                    } else {
+                        allServers[key] = {
+                            ...server,
+                            apps: [
+                                adapter.name
+                            ]
+                        };
+                    }
+                }
+            }
+            return allServers;
+        }
+        async addServer(name, server, appNames) {
+            const targetAdapters = appNames ? this.adapters.filter((adapter)=>appNames.includes(adapter.name)) : this.adapters;
+            let success = true;
+            for (const adapter of targetAdapters){
+                const servers = await this.readAppConfig(adapter);
+                servers[name] = server;
+                const written = await this.writeAppConfig(adapter, servers);
+                if (!written) {
+                    success = false;
+                }
+            }
+            return success;
+        }
+        async updateServer(name, server, appNames) {
+            return await this.addServer(name, server, appNames);
+        }
+        async removeServer(name, appNames) {
+            const targetAdapters = appNames ? this.adapters.filter((adapter)=>appNames.includes(adapter.name)) : this.adapters;
+            let success = true;
+            for (const adapter of targetAdapters){
+                const servers = await this.readAppConfig(adapter);
+                delete servers[name];
+                const written = await this.writeAppConfig(adapter, servers);
+                if (!written) {
+                    success = false;
+                }
+            }
+            return success;
+        }
+        async toggleServer(name, enabled, server, appNames) {
+            if (enabled) {
+                return await this.addServer(name, server, appNames);
+            } else {
+                return await this.removeServer(name, appNames);
+            }
+        }
+    }
+}
+,
+"0b861e2b":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "MCPStudioService", ()=>MCPStudioService);
+    var _f_index = farmRequire('@modelcontextprotocol/sdk/client/index.js');
+    var _f_stdio = farmRequire('@modelcontextprotocol/sdk/client/stdio.js');
+    var _f_sse = farmRequire('@modelcontextprotocol/sdk/client/sse.js');
+    var _f_streamableHttp = farmRequire('@modelcontextprotocol/sdk/client/streamableHttp.js');
+    class MCPStudioService {
+        connections = new Map();
+        mainWindow = null;
+        setMainWindow(window) {
+            this.mainWindow = window;
+        }
+        sendLog(serverId, message) {
+            if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+                this.mainWindow.webContents.send('studio:log', serverId, message);
+            }
+        }
+        createTransport(server) {
+            const transportType = server.transportType || 'stdio';
+            switch(transportType){
+                case 'streamable-http':
+                    {
+                        if (!server.url) {
+                            throw new Error('URL is required for Streamable HTTP transport');
+                        }
+                        const transport = new _f_streamableHttp.StreamableHTTPClientTransport(new URL(server.url));
+                        transport.onerror = (error)=>{
+                            this.sendLog(server.id, `[Error] ${error.message}`);
+                        };
+                        transport.onclose = ()=>{
+                            this.sendLog(server.id, '[Connection] Transport closed');
+                        };
+                        return {
+                            transport,
+                            transportType
+                        };
+                    }
+                case 'sse':
+                    {
+                        if (!server.url) {
+                            throw new Error('URL is required for SSE transport');
+                        }
+                        const transport = new _f_sse.SSEClientTransport(new URL(server.url));
+                        transport.onerror = (error)=>{
+                            this.sendLog(server.id, `[Error] ${error.message}`);
+                        };
+                        transport.onclose = ()=>{
+                            this.sendLog(server.id, '[Connection] Transport closed');
+                        };
+                        return {
+                            transport,
+                            transportType
+                        };
+                    }
+                case 'stdio':
+                default:
+                    {
+                        const transport = new _f_stdio.StdioClientTransport({
+                            command: server.command,
+                            args: server.args,
+                            env: server.env
+                        });
+                        return {
+                            transport,
+                            transportType: 'stdio'
+                        };
+                    }
+            }
+        }
+        attachStdioListeners(transport, serverId) {
+            const attachProcessListeners = ()=>{
+                const process = transport._process;
+                if (!process) {
+                    setTimeout(attachProcessListeners, 50);
+                    return;
+                }
+                if (process.stderr) {
+                    process.stderr.on('data', (data)=>{
+                        const message = data.toString();
+                        if (message) {
+                            const lines = message.split('\n').filter((line)=>line.trim());
+                            lines.forEach((line)=>this.sendLog(serverId, line));
+                        }
+                    });
+                }
+                if (process.stdout) {
+                    const stdoutBuffer = [];
+                    process.stdout.on('data', (data)=>{
+                        const message = data.toString();
+                        stdoutBuffer.push(message);
+                        const combined = stdoutBuffer.join('');
+                        const lines = combined.split('\n');
+                        stdoutBuffer.length = 0;
+                        if (lines[lines.length - 1] !== '') {
+                            stdoutBuffer.push(lines.pop());
+                        }
+                        lines.forEach((line)=>{
+                            const trimmed = line.trim();
+                            if (trimmed && !trimmed.startsWith('{"jsonrpc"') && !trimmed.startsWith('Content-Length:')) {
+                                this.sendLog(serverId, line);
+                            }
+                        });
+                    });
+                }
+            };
+            attachProcessListeners();
+        }
+        async startServer(server) {
+            try {
+                if (this.connections.has(server.id)) {
+                    await this.stopServer(server.id);
+                }
+                const client = new _f_index.Client({
+                    name: 'mcp-studio-client',
+                    version: '1.0.0'
+                }, {
+                    capabilities: {}
+                });
+                const { transport, transportType } = this.createTransport(server);
+                if (transportType === 'stdio') {
+                    this.attachStdioListeners(transport, server.id);
+                } else {
+                    this.sendLog(server.id, `[Connection] Connecting to ${server.url} via ${transportType}...`);
+                }
+                await client.connect(transport);
+                if (transportType !== 'stdio') {
+                    this.sendLog(server.id, '[Connection] Connected successfully');
+                }
+                this.connections.set(server.id, {
+                    client,
+                    transport,
+                    server,
+                    transportType
+                });
+                return {
+                    success: true
+                };
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                this.sendLog(server.id, `[Error] Failed to start: ${errorMessage}`);
+                return {
+                    success: false,
+                    error: errorMessage
+                };
+            }
+        }
+        async stopServer(serverId) {
+            const connection = this.connections.get(serverId);
+            if (!connection) {
+                return false;
+            }
+            try {
+                await connection.client.close();
+                this.connections.delete(serverId);
+                return true;
+            } catch (error) {
+                this.connections.delete(serverId);
+                return false;
+            }
+        }
+        async listTools(serverId) {
+            const connection = this.connections.get(serverId);
+            if (!connection) {
+                throw new Error('Server not started');
+            }
+            try {
+                const result = await connection.client.listTools();
+                return result.tools;
+            } catch (error) {
+                throw new Error(`Failed to list tools: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        }
+        async callTool(serverId, toolName, args) {
+            const connection = this.connections.get(serverId);
+            if (!connection) {
+                throw new Error('Server not started');
+            }
+            try {
+                const result = await connection.client.callTool({
+                    name: toolName,
+                    arguments: args
+                });
+                return result;
+            } catch (error) {
+                throw new Error(`Failed to call tool: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        }
+        isServerRunning(serverId) {
+            return this.connections.has(serverId);
+        }
+        getConnectionType(serverId) {
+            const connection = this.connections.get(serverId);
+            return connection ? connection.transportType : null;
+        }
+        stopAllServers() {
+            for (const [serverId] of this.connections){
+                this.stopServer(serverId);
+            }
+        }
+    }
+}
+,
+"0ca95b01":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "ClaudeAdapter", ()=>ClaudeAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_FileService = farmRequire("454c8ae6");
+    class ClaudeAdapter {
+        name = 'Claude Desktop';
+        icon = 'https://www.claude.ai/favicon.ico';
+        color = '#e28743';
+        getPath() {
+            return path.join(os.homedir(), 'Library/Application Support/Claude/claude_desktop_config.json');
+        }
+        async configExists() {
+            const appPath = '/Applications/Claude.app';
+            return fs.existsSync(appPath);
+        }
+        async getServers() {
+            const data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data || !data.mcpServers) {
+                return {};
+            }
+            return data.mcpServers;
+        }
+        async setServers(servers) {
+            let data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data) {
+                data = {};
+            }
+            data.mcpServers = servers;
+            return await _f_FileService.FileService.writeJSON(this.getPath(), data);
+        }
+    }
+}
+,
+"0e9b2207":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "CustomAppStore", ()=>CustomAppStore);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_electron = farmRequire('electron');
+    class CustomAppStore {
+        storePath;
+        apps = [];
+        constructor(){
+            const userDataPath = _f_electron.app.getPath('userData');
+            this.storePath = path.join(userDataPath, 'custom-apps.json');
+            this.load();
+        }
+        load() {
+            try {
+                if (fs.existsSync(this.storePath)) {
+                    const data = JSON.parse(fs.readFileSync(this.storePath, 'utf-8'));
+                    this.apps = data.apps || [];
+                }
+            } catch (error) {
+                console.error('Error loading custom apps:', error);
+                this.apps = [];
+            }
+        }
+        save() {
+            try {
+                const dir = path.dirname(this.storePath);
+                if (!fs.existsSync(dir)) {
+                    fs.mkdirSync(dir, {
+                        recursive: true
+                    });
+                }
+                fs.writeFileSync(this.storePath, JSON.stringify({
+                    apps: this.apps
+                }, null, 2));
+            } catch (error) {
+                console.error('Error saving custom apps:', error);
+            }
+        }
+        async getAllApps() {
+            return this.apps;
+        }
+        async addApp(app) {
+            const existingIndex = this.apps.findIndex((a)=>a.id === app.id);
+            if (existingIndex >= 0) {
+                this.apps[existingIndex] = app;
+            } else {
+                this.apps.push(app);
+            }
+            this.save();
+            return true;
+        }
+        async removeApp(id) {
+            const initialLength = this.apps.length;
+            this.apps = this.apps.filter((a)=>a.id !== id);
+            if (this.apps.length !== initialLength) {
+                this.save();
+                return true;
+            }
+            return false;
+        }
+        async getApp(id) {
+            return this.apps.find((a)=>a.id === id);
+        }
+    }
+}
+,
+"1e52c97c":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "OpencodeAdapter", ()=>OpencodeAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_FileService = farmRequire("454c8ae6");
+    class OpencodeAdapter {
+        name = 'opencode CLI';
+        icon = 'https://github.com/sst/opencode/blob/dev/packages/identity/avatar-dark.png?raw=true';
+        color = '#6366f1';
+        getPath() {
+            return path.join(os.homedir(), '.config/opencode/opencode.json');
+        }
+        async configExists() {
+            const configDir = path.dirname(this.getPath());
+            return fs.existsSync(configDir);
+        }
+        async getServers() {
+            const data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data || !data.mcp) {
+                return {};
+            }
+            const mcpServers = {};
+            for (const [name, config] of Object.entries(data.mcp)){
+                const mcpConfig = config;
+                if (mcpConfig.type === 'local') {
+                    const server = {
+                        command: mcpConfig.command?.[0] || '',
+                        args: mcpConfig.command?.slice(1) || [],
+                        env: mcpConfig.environment || {}
+                    };
+                    mcpServers[name] = server;
+                }
+            }
+            return mcpServers;
+        }
+        async setServers(servers) {
+            let data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data) {
+                data = {
+                    "$schema": "https://opencode.ai/config.json"
+                };
+            }
+            const newMcp = {};
+            for (const [name, config] of Object.entries(servers)){
+                newMcp[name] = {
+                    type: 'local',
+                    command: [
+                        config.command,
+                        ...config.args || []
+                    ],
+                    enabled: true
+                };
+                if (config.env && Object.keys(config.env).length > 0) {
+                    newMcp[name].environment = config.env;
+                }
+            }
+            data.mcp = newMcp;
+            return await _f_FileService.FileService.writeJSON(this.getPath(), data);
+        }
+    }
+}
+,
+"290335cd":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "ClineAdapter", ()=>ClineAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_FileService = farmRequire("454c8ae6");
+    class ClineAdapter {
+        name = 'Cline';
+        icon = 'https://raw.githubusercontent.com/cline/cline/refs/heads/main/docs/assets/robot_panel_light.png';
+        color = '#edab49';
+        getConfigPaths() {
+            const homeDir = os.homedir();
+            return [
+                path.join(homeDir, 'Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json'),
+                path.join(homeDir, 'Library/Application Support/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json'),
+                path.join(homeDir, 'Library/Application Support/VSCodium/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json')
+            ];
+        }
+        findExistingPath() {
+            for (const configPath of this.getConfigPaths()){
+                if (fs.existsSync(configPath)) {
+                    return configPath;
+                }
+            }
+            return null;
+        }
+        getPath() {
+            const existingPath = this.findExistingPath();
+            if (existingPath) {
+                return existingPath;
+            }
+            return this.getConfigPaths()[0];
+        }
+        async configExists() {
+            return this.findExistingPath() !== null;
+        }
+        async getServers() {
+            const data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data || !data.mcpServers) {
+                return {};
+            }
+            return data.mcpServers;
+        }
+        async setServers(servers) {
+            let data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data) {
+                data = {};
+            }
+            data.mcpServers = servers;
+            return await _f_FileService.FileService.writeJSON(this.getPath(), data);
+        }
+    }
+}
+,
+"324d43da":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "BackupService", ()=>BackupService);
+    var _f_promises = module.w(farmRequire('fs/promises'));
+    var fs = _f_promises;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_electron = farmRequire('electron');
+    class BackupService {
+        backupDir;
+        constructor(){
+            this.backupDir = path.join(_f_electron.app.getPath('userData'), 'backups');
+        }
+        async ensureBackupDir() {
+            try {
+                await fs.access(this.backupDir);
+            } catch  {
+                await fs.mkdir(this.backupDir, {
+                    recursive: true
+                });
+            }
+        }
+        async createBackup(appName, config) {
+            try {
+                await this.ensureBackupDir();
+                const backupPath = path.join(this.backupDir, `${appName}.json`);
+                const backupData = {
+                    appName,
+                    config,
+                    timestamp: Date.now()
+                };
+                await fs.writeFile(backupPath, JSON.stringify(backupData, null, 2), 'utf-8');
+                return true;
+            } catch (error) {
+                console.error(`Failed to create backup for ${appName}:`, error);
+                return false;
+            }
+        }
+        async getBackup(appName) {
+            try {
+                const backupPath = path.join(this.backupDir, `${appName}.json`);
+                const data = await fs.readFile(backupPath, 'utf-8');
+                const backupData = JSON.parse(data);
+                return backupData.config;
+            } catch (error) {
+                console.error(`Failed to read backup for ${appName}:`, error);
+                return null;
+            }
+        }
+        async hasBackup(appName) {
+            try {
+                const backupPath = path.join(this.backupDir, `${appName}.json`);
+                await fs.access(backupPath);
+                return true;
+            } catch  {
+                return false;
+            }
+        }
+        async deleteBackup(appName) {
+            try {
+                const backupPath = path.join(this.backupDir, `${appName}.json`);
+                await fs.unlink(backupPath);
+                return true;
+            } catch (error) {
+                console.error(`Failed to delete backup for ${appName}:`, error);
+                return false;
+            }
+        }
+    }
+}
+,
+"32818e82":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "WindsurfAdapter", ()=>WindsurfAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_VSCodeAdapter = farmRequire("3624460c");
+    class WindsurfAdapter extends _f_VSCodeAdapter.VSCodeAdapter {
+        name = 'Windsurf';
+        icon = 'https://codeium.com/favicon.ico';
+        color = '#09B6A2';
+        getPath() {
+            return path.join(os.homedir(), 'Library/Application Support/Windsurf/mcp_server_config.json');
+        }
+        async configExists() {
+            const appPath = '/Applications/Windsurf.app';
+            return fs.existsSync(appPath);
+        }
+    }
+}
+,
+"3624460c":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "VSCodeAdapter", ()=>VSCodeAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_FileService = farmRequire("454c8ae6");
+    var _f_path = module.i(farmRequire('path'));
+    var _f_os = module.i(farmRequire('os'));
+    class VSCodeAdapter {
+        name = 'VSCode';
+        icon = 'https://code.visualstudio.com/favicon.ico';
+        color = '#007acc';
+        getPath() {
+            return module.f(_f_path).join(module.f(_f_os).homedir(), 'Library/Application Support/Code/User/mcp.json');
+        }
+        async configExists() {
+            const appPath = '/Applications/Visual Studio Code.app';
+            return fs.existsSync(appPath);
+        }
+        async getServers() {
+            const data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data || !data.servers) {
+                return {};
+            }
+            const servers = {};
+            for (const [key, value] of Object.entries(data.servers)){
+                const vsServer = value;
+                if (vsServer.command) {
+                    servers[key] = {
+                        command: vsServer.command,
+                        args: vsServer.args || [],
+                        env: vsServer.env,
+                        settings: {
+                            type: vsServer.type,
+                            url: vsServer.url,
+                            headers: vsServer.headers,
+                            gallery: vsServer.gallery,
+                            version: vsServer.version
+                        }
+                    };
+                } else if (vsServer.type === 'http' && vsServer.url) {
+                    servers[key] = {
+                        command: '',
+                        args: [],
+                        settings: {
+                            type: vsServer.type,
+                            url: vsServer.url,
+                            headers: vsServer.headers,
+                            gallery: vsServer.gallery,
+                            version: vsServer.version
+                        }
+                    };
+                }
+            }
+            return servers;
+        }
+        async setServers(servers) {
+            let data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data) {
+                data = {};
+            }
+            const existingServers = data.servers || {};
+            const transformedServers = {};
+            for (const [key, server] of Object.entries(servers)){
+                const isStreamingViaTransport = server.transportType && server.transportType !== 'stdio' && server.url;
+                const isStreamingViaSettings = server.settings?.type === 'http' && server.settings?.url;
+                if (isStreamingViaTransport) {
+                    const vsType = server.transportType === 'sse' ? 'sse' : 'http';
+                    transformedServers[key] = {
+                        type: vsType,
+                        url: server.url,
+                        ...server.env && {
+                            env: server.env
+                        }
+                    };
+                } else if (isStreamingViaSettings) {
+                    transformedServers[key] = {
+                        type: server.settings.type,
+                        url: server.settings.url,
+                        ...server.settings.headers && {
+                            headers: server.settings.headers
+                        },
+                        ...server.settings.gallery && {
+                            gallery: server.settings.gallery
+                        },
+                        ...server.settings.version && {
+                            version: server.settings.version
+                        }
+                    };
+                } else if (server.command) {
+                    transformedServers[key] = {
+                        command: server.command,
+                        args: server.args || [],
+                        ...server.env && {
+                            env: server.env
+                        }
+                    };
+                }
+            }
+            for (const [key, value] of Object.entries(existingServers)){
+                if (!transformedServers[key]) {
+                    const existing = value;
+                    const isSupported = !!existing.command || existing.type === 'http' && !!existing.url;
+                    if (!isSupported) {
+                        transformedServers[key] = existing;
+                    }
+                }
+            }
+            data.servers = transformedServers;
+            return await _f_FileService.FileService.writeJSON(this.getPath(), data);
+        }
+    }
+}
+,
+"454c8ae6":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "FileService", ()=>FileService);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_jsonParser = farmRequire("87f18120");
+    class FileService {
+        static expandPath(filePath) {
+            if (filePath.startsWith('~/')) {
+                return path.join(os.homedir(), filePath.slice(2));
+            }
+            return filePath;
+        }
+        static async readJSON(filePath) {
+            const expandedPath = this.expandPath(filePath);
+            try {
+                if (!fs.existsSync(expandedPath)) {
+                    return null;
+                }
+                const content = await fs.promises.readFile(expandedPath, 'utf-8');
+                return _f_jsonParser.parseJSON(content);
+            } catch (error) {
+                console.error(`Error reading JSON from ${expandedPath}:`, error);
+                return null;
+            }
+        }
+        static async writeJSON(filePath, data) {
+            const expandedPath = this.expandPath(filePath);
+            try {
+                const dir = path.dirname(expandedPath);
+                if (!fs.existsSync(dir)) {
+                    await fs.promises.mkdir(dir, {
+                        recursive: true
+                    });
+                }
+                await fs.promises.writeFile(expandedPath, _f_jsonParser.stringifyJSON(data, 2), 'utf-8');
+                return true;
+            } catch (error) {
+                console.error(`Error writing JSON to ${expandedPath}:`, error);
+                return false;
+            }
+        }
+        static async ensureFile(filePath, defaultContent = {}) {
+            const expandedPath = this.expandPath(filePath);
+            if (!fs.existsSync(expandedPath)) {
+                await this.writeJSON(filePath, defaultContent);
+            }
+        }
+    }
+}
+,
+"4a89c147":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "ClaudeCodeAdapter", ()=>ClaudeCodeAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_FileService = farmRequire("454c8ae6");
+    class ClaudeCodeAdapter {
+        name = 'Claude Code';
+        icon = 'https://claude.ai/favicon.ico';
+        color = '#d97706';
+        getPath() {
+            return path.join(os.homedir(), '.claude.json');
+        }
+        async configExists() {
+            const configPath = this.getPath();
+            if (!fs.existsSync(configPath)) {
+                return false;
+            }
+            const data = await _f_FileService.FileService.readJSON(configPath);
+            return data !== null;
+        }
+        async getServers() {
+            const data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data || !data.mcpServers) {
+                return {};
+            }
+            return data.mcpServers;
+        }
+        async setServers(servers) {
+            let data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data) {
+                data = {};
+            }
+            data.mcpServers = servers;
+            return await _f_FileService.FileService.writeJSON(this.getPath(), data);
+        }
+    }
+}
+,
+"4d691808":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "ZedAdapter", ()=>ZedAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_FileService = farmRequire("454c8ae6");
+    var _f_packageRunner = farmRequire("6d8f9985");
+    class ZedAdapter {
+        name = 'Zed';
+        icon = 'https://zed.dev/favicon_black_64.png';
+        color = '#606266';
+        getPath() {
+            return path.join(os.homedir(), '.config/zed/settings.json');
+        }
+        async configExists() {
+            return fs.existsSync('/Applications/Zed.app') || fs.existsSync('/Applications/Zed Preview.app');
+        }
+        async getServers() {
+            const data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data || !data.context_servers) {
+                return {};
+            }
+            const servers = {};
+            for (const [key, value] of Object.entries(data.context_servers)){
+                const zedServer = value;
+                if (zedServer.source !== 'custom') {
+                    servers[key] = {
+                        command: zedServer.command || '',
+                        args: zedServer.args || [],
+                        source: zedServer.source || 'custom',
+                        env: zedServer.env || undefined,
+                        settings: zedServer.settings || undefined
+                    };
+                }
+            }
+            return servers;
+        }
+        async setServers(servers) {
+            let data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data) {
+                data = {};
+            }
+            const existingContextServers = data.context_servers || {};
+            const customServers = {};
+            for (const [key, value] of Object.entries(existingContextServers)){
+                const server = value;
+                if (server.source === 'custom') {
+                    customServers[key] = value;
+                }
+            }
+            const transformedServers = {};
+            for (const [key, server] of Object.entries(servers)){
+                const isStreamingViaTransport = server.transportType && server.transportType !== 'stdio' && server.url;
+                const isStreamingViaSettings = server.settings?.type === 'http' && server.settings?.url;
+                if (isStreamingViaTransport && server.url) {
+                    const remoteConfig = _f_packageRunner.createMcpRemoteConfig(server.url, server.settings?.headers);
+                    transformedServers[key] = {
+                        command: remoteConfig.command,
+                        args: remoteConfig.args,
+                        env: server.env || null,
+                        enabled: server.enabled ?? true
+                    };
+                } else if (isStreamingViaSettings) {
+                    const remoteConfig = _f_packageRunner.createMcpRemoteConfig(server.settings.url, server.settings?.headers);
+                    transformedServers[key] = {
+                        command: remoteConfig.command,
+                        args: remoteConfig.args,
+                        env: server.env || null,
+                        enabled: server.enabled ?? true
+                    };
+                } else {
+                    transformedServers[key] = {
+                        command: server.command,
+                        args: server.args,
+                        env: server.env || null,
+                        settings: server.settings || undefined,
+                        enabled: server.enabled ?? true
+                    };
+                }
+            }
+            data.context_servers = {
+                ...customServers,
+                ...transformedServers
+            };
+            return await _f_FileService.FileService.writeJSON(this.getPath(), data);
+        }
+    }
+}
+,
+"5aaf0170":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "MasterServerStore", ()=>MasterServerStore);
+    var _f_electron = farmRequire('electron');
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_FileService = farmRequire("454c8ae6");
+    class MasterServerStore {
+        storePath;
+        servers = new Map();
+        initialized;
+        constructor(){
+            this.storePath = path.join(_f_electron.app.getPath('userData'), 'mcp_servers.json');
+            this.initialized = this.initializeStore();
+        }
+        async initializeStore() {
+            await _f_FileService.FileService.ensureFile(this.storePath, {
+                servers: []
+            });
+            await this.load();
+        }
+        async load() {
+            const data = await _f_FileService.FileService.readJSON(this.storePath);
+            if (data && data.servers) {
+                this.servers.clear();
+                for (const server of data.servers){
+                    this.servers.set(server.id, server);
+                }
+            }
+        }
+        async save() {
+            const data = {
+                servers: Array.from(this.servers.values()),
+                lastUpdated: Date.now()
+            };
+            return await _f_FileService.FileService.writeJSON(this.storePath, data);
+        }
+        async getAllServers() {
+            await this.initialized;
+            return Array.from(this.servers.values());
+        }
+        async getServer(id) {
+            await this.initialized;
+            return this.servers.get(id);
+        }
+        async addServer(server) {
+            await this.initialized;
+            const now = Date.now();
+            const newServer = {
+                ...server,
+                createdAt: now,
+                updatedAt: now
+            };
+            this.servers.set(server.id, newServer);
+            return await this.save();
+        }
+        async updateServer(id, updates) {
+            await this.initialized;
+            const existing = this.servers.get(id);
+            if (!existing) return false;
+            const updated = {
+                ...existing,
+                ...updates,
+                id,
+                updatedAt: Date.now()
+            };
+            this.servers.set(id, updated);
+            return await this.save();
+        }
+        async removeServer(id) {
+            await this.initialized;
+            if (!this.servers.has(id)) return false;
+            this.servers.delete(id);
+            return await this.save();
+        }
+        async toggleServer(id, enabled) {
+            return await this.updateServer(id, {
+                enabled
+            });
+        }
+        async addAppToServer(serverId, appName) {
+            await this.initialized;
+            const server = this.servers.get(serverId);
+            if (!server) return false;
+            if (!server.apps.includes(appName)) {
+                server.apps.push(appName);
+                server.updatedAt = Date.now();
+                return await this.save();
+            }
+            return true;
+        }
+        async removeAppFromServer(serverId, appName) {
+            await this.initialized;
+            const server = this.servers.get(serverId);
+            if (!server) return false;
+            const index = server.apps.indexOf(appName);
+            if (index !== -1) {
+                server.apps.splice(index, 1);
+                server.updatedAt = Date.now();
+                return await this.save();
+            }
+            return true;
+        }
+        async syncFromAppConfigs(appServers) {
+            await this.initialized;
+            for (const [id, serverData] of Object.entries(appServers)){
+                const existing = this.servers.get(id);
+                if (!existing) {
+                    const now = Date.now();
+                    const newServer = {
+                        id,
+                        name: id.charAt(0).toUpperCase() + id.slice(1),
+                        command: serverData.command,
+                        args: serverData.args,
+                        env: serverData.env,
+                        settings: serverData.settings,
+                        source: serverData.source,
+                        enabled: serverData.enabled ?? true,
+                        permissions: 'always_ask',
+                        apps: serverData.apps,
+                        iconUrl: undefined,
+                        description: undefined,
+                        transportType: serverData.transportType,
+                        url: serverData.url,
+                        createdAt: now,
+                        updatedAt: now
+                    };
+                    this.servers.set(id, newServer);
+                    await this.save();
+                }
+            }
+        }
+    }
+}
+,
+"5df6d6a0":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "APP_ADAPTERS", ()=>APP_ADAPTERS);
+    module.o(exports, "initCustomAppStore", ()=>initCustomAppStore);
+    module.o(exports, "getAvailableAdapters", ()=>getAvailableAdapters);
+    var _f_ClaudeAdapter = farmRequire("0ca95b01");
+    var _f_ClaudeCodeAdapter = farmRequire("4a89c147");
+    var _f_MistralVibeAdapter = farmRequire("6f17f27f");
+    var _f_ZedAdapter = farmRequire("4d691808");
+    var _f_CursorAdapter = farmRequire("94d886ec");
+    var _f_VSCodeAdapter = farmRequire("3624460c");
+    var _f_WindsurfAdapter = farmRequire("32818e82");
+    var _f_GeminiAdapter = farmRequire("666da5e9");
+    var _f_QwenAdapter = farmRequire("8fb0384e");
+    var _f_OpencodeAdapter = farmRequire("1e52c97c");
+    var _f_KiloCodeAdapter = farmRequire("cc18dfe6");
+    var _f_ClineAdapter = farmRequire("290335cd");
+    var _f_AntigravityAdapter = farmRequire("f8cca18d");
+    var _f_CustomAppAdapter = farmRequire("8a78f2eb");
+    var APP_ADAPTERS = [
+        new _f_ClaudeAdapter.ClaudeAdapter(),
+        new _f_ClaudeCodeAdapter.ClaudeCodeAdapter(),
+        new _f_MistralVibeAdapter.MistralVibeAdapter(),
+        new _f_ZedAdapter.ZedAdapter(),
+        new _f_CursorAdapter.CursorAdapter(),
+        new _f_VSCodeAdapter.VSCodeAdapter(),
+        new _f_WindsurfAdapter.WindsurfAdapter(),
+        new _f_GeminiAdapter.GeminiAdapter(),
+        new _f_QwenAdapter.QwenAdapter(),
+        new _f_OpencodeAdapter.OpencodeAdapter(),
+        new _f_KiloCodeAdapter.KiloCodeAdapter(),
+        new _f_ClineAdapter.ClineAdapter(),
+        new _f_AntigravityAdapter.AntigravityAdapter()
+    ];
+    let customAppStore = null;
+    function initCustomAppStore(store) {
+        customAppStore = store;
+    }
+    async function getAvailableAdapters() {
+        const available = [];
+        for (const adapter of APP_ADAPTERS){
+            const exists = await adapter.configExists();
+            console.log(`[Detection] ${adapter.name}: ${exists ? '✓' : '✗'} (${adapter.getPath()})`);
+            if (exists) {
+                available.push(adapter);
+            }
+        }
+        if (customAppStore) {
+            const customApps = await customAppStore.getAllApps();
+            for (const customApp of customApps){
+                const adapter = new _f_CustomAppAdapter.CustomAppAdapter(customApp);
+                console.log(`[Detection] ${adapter.name} (custom): ✓ (${adapter.getPath()})`);
+                available.push(adapter);
+            }
+        }
+        console.log(`[Detection] Total apps detected: ${available.length}/${APP_ADAPTERS.length} built-in`);
+        return available;
+    }
+    var _f_AppAdapter = farmRequire("ea3ba68a");
+    module._(exports, "AppAdapter", _f_AppAdapter);
+    var _f_CustomAppAdapter1 = farmRequire("8a78f2eb");
+    module._(exports, "CustomAppAdapter", _f_CustomAppAdapter1);
+}
+,
+"666da5e9":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "GeminiAdapter", ()=>GeminiAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_FileService = farmRequire("454c8ae6");
+    class GeminiAdapter {
+        name = 'Gemini CLI';
+        icon = 'https://www.gstatic.com/lamda/images/gemini_favicon_f069958c85030456e93de685481c559f160ea06b.png';
+        color = '#4285f4';
+        getPath() {
+            return path.join(os.homedir(), '.gemini/settings.json');
+        }
+        async configExists() {
+            return fs.existsSync(this.getPath());
+        }
+        async getServers() {
+            const data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data || !data.mcpServers) {
+                return {};
+            }
+            return data.mcpServers;
+        }
+        async setServers(servers) {
+            let data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data) {
+                data = {};
+            }
+            const cleanedServers = {};
+            for (const [key, server] of Object.entries(servers)){
+                const { enabled, ...rest } = server;
+                cleanedServers[key] = rest;
+            }
+            data.mcpServers = cleanedServers;
+            return await _f_FileService.FileService.writeJSON(this.getPath(), data);
+        }
+    }
+}
+,
+"6d8f9985":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "getPackageRunner", ()=>getPackageRunner);
+    module.o(exports, "createMcpRemoteConfig", ()=>createMcpRemoteConfig);
+    var _f_child_process = farmRequire('child_process');
+    let cachedRunner = null;
+    function getPackageRunner() {
+        if (cachedRunner !== null) {
+            return cachedRunner;
+        }
+        try {
+            _f_child_process.execSync('which bunx', {
+                stdio: 'ignore'
+            });
+            cachedRunner = 'bunx';
+        } catch  {
+            cachedRunner = 'npx';
+        }
+        return cachedRunner;
+    }
+    function createMcpRemoteConfig(url, headers) {
+        const runner = getPackageRunner();
+        const args = [
+            '-y',
+            'mcp-remote',
+            url
+        ];
+        if (headers) {
+            for (const [key, value] of Object.entries(headers)){
+                args.push('--header', `${key}: ${value}`);
+            }
+        }
+        return {
+            command: runner,
+            args
+        };
+    }
+}
+,
+"6f17f27f":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "MistralVibeAdapter", ()=>MistralVibeAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_smol_toml = module.w(farmRequire('smol-toml'));
+    var toml = _f_smol_toml;
+    class MistralVibeAdapter {
+        name = 'Mistral Vibe';
+        icon = 'https://mistral.ai/favicon.ico';
+        color = '#F3D0C1';
+        getPath() {
+            return path.join(os.homedir(), '.vibe/config.toml');
+        }
+        async configExists() {
+            return fs.existsSync(this.getPath());
+        }
+        async getServers() {
+            const expandedPath = this.getPath();
+            if (!fs.existsSync(expandedPath)) {
+                return {};
+            }
+            try {
+                const content = await fs.promises.readFile(expandedPath, 'utf-8');
+                const data = toml.parse(content);
+                const servers = {};
+                if (data.mcp_servers && Array.isArray(data.mcp_servers)) {
+                    for (const s of data.mcp_servers){
+                        if (s.name) {
+                            servers[s.name] = {
+                                command: s.command || '',
+                                args: s.args || [],
+                                env: s.env,
+                                settings: {
+                                    transport: s.transport,
+                                    url: s.url,
+                                    headers: s.headers,
+                                    api_key_env: s.api_key_env,
+                                    api_key_header: s.api_key_header,
+                                    api_key_format: s.api_key_format
+                                }
+                            };
+                        }
+                    }
+                }
+                return servers;
+            } catch (error) {
+                console.error('Error reading Mistral Vibe config:', error);
+                return {};
+            }
+        }
+        async setServers(servers) {
+            const expandedPath = this.getPath();
+            let data = {};
+            try {
+                if (fs.existsSync(expandedPath)) {
+                    const content = await fs.promises.readFile(expandedPath, 'utf-8');
+                    data = toml.parse(content);
+                }
+                const mcp_servers = Object.entries(servers).map(([name, server])=>{
+                    const mistralServer = {
+                        name,
+                        transport: server.settings?.transport || 'stdio',
+                        command: server.command,
+                        args: server.args,
+                        env: server.env
+                    };
+                    if (server.settings) {
+                        if (server.settings.url) mistralServer.url = server.settings.url;
+                        if (server.settings.headers) mistralServer.headers = server.settings.headers;
+                        if (server.settings.api_key_env) mistralServer.api_key_env = server.settings.api_key_env;
+                        if (server.settings.api_key_header) mistralServer.api_key_header = server.settings.api_key_header;
+                        if (server.settings.api_key_format) mistralServer.api_key_format = server.settings.api_key_format;
+                    }
+                    return mistralServer;
+                });
+                data.mcp_servers = mcp_servers;
+                const newContent = toml.stringify(data);
+                const dir = path.dirname(expandedPath);
+                if (!fs.existsSync(dir)) {
+                    await fs.promises.mkdir(dir, {
+                        recursive: true
+                    });
+                }
+                await fs.promises.writeFile(expandedPath, newContent, 'utf-8');
+                return true;
+            } catch (error) {
+                console.error('Error writing Mistral Vibe config:', error);
+                return false;
+            }
+        }
+    }
+}
+,
+"799f0da0":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    var _f_node_path = module.i(farmRequire('node:path'));
+    var _f_node_url = farmRequire('node:url');
+    var _f_electron = farmRequire('electron');
+    var _f_electron_liquid_glass = module.i(farmRequire('electron-liquid-glass'));
+    var _f_MCPConfigManager = farmRequire("01630ced");
+    var _f_MasterServerStore = farmRequire("5aaf0170");
+    var _f_MCPStudioService = farmRequire("0b861e2b");
+    var _f_BackupService = farmRequire("324d43da");
+    var _f_CustomAppStore = farmRequire("0e9b2207");
+    var _f_apps = farmRequire("5df6d6a0");
+    const __dirname = module.f(_f_node_path).dirname(_f_node_url.fileURLToPath(import.meta.url));
+    process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+    if (!_f_electron.app.requestSingleInstanceLock()) {
+        _f_electron.app.quit();
+        process.exit(0);
+    }
+    let mainWindow = null;
+    let mcpManager;
+    let masterStore;
+    let mcpStudioService;
+    let backupService;
+    let customAppStore;
+    let appAdapters = [];
+    let appSyncStates = new Map();
+    function getRendererPath() {
+        if (_f_electron.app.isPackaged) {
+            return module.f(_f_node_path).join(process.resourcesPath, 'app.asar', 'dist', 'index.html');
+        }
+        return module.f(_f_node_path).join(__dirname, '..', 'dist', 'index.html');
+    }
+    function getAssetsPath() {
+        if (_f_electron.app.isPackaged) {
+            return module.f(_f_node_path).join(process.resourcesPath, 'assets');
+        }
+        return module.f(_f_node_path).join(__dirname, '..', '..', 'src', 'renderer', 'assets');
+    }
+    function getIconPath() {
+        if (process.platform === 'darwin') {
+            if (_f_electron.app.isPackaged) {
+                return module.f(_f_node_path).join(process.resourcesPath, '..', 'Resources', 'electron.icns');
+            }
+            const icnsPath = module.f(_f_node_path).join(__dirname, '..', '..', 'build', 'icon.icns');
+            const fs = global.nodeRequire('fs', true);
+            if (fs.existsSync(icnsPath)) {
+                return icnsPath;
+            }
+        }
+        return module.f(_f_node_path).join(getAssetsPath(), 'logo.svg');
+    }
+    function createWindow() {
+        const isDev = !!process.env.FARM_DEV_SERVER_URL;
+        mainWindow = new _f_electron.BrowserWindow({
+            width: 1200,
+            height: 800,
+            transparent: true,
+            titleBarStyle: 'hiddenInset',
+            trafficLightPosition: {
+                x: 12,
+                y: 12
+            },
+            icon: getIconPath(),
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true,
+                preload: module.f(_f_node_path).join(__dirname, 'preload.mjs')
+            }
+        });
+        mainWindow.setWindowButtonVisibility(true);
+        if (isDev) {
+            mainWindow.loadURL(process.env.FARM_DEV_SERVER_URL);
+            mainWindow.webContents.openDevTools();
+        } else {
+            mainWindow.loadFile(getRendererPath());
+        }
+        mainWindow.webContents.once('did-finish-load', ()=>{
+            console.log('Window loaded');
+            if (mainWindow && process.platform === 'darwin') {
+                console.log('Adding glass');
+                const vh = mainWindow.getNativeWindowHandle();
+                console.log(vh);
+                const glassId = module.f(_f_electron_liquid_glass).addView(vh, {
+                    cornerRadius: 12,
+                    opaque: false
+                });
+                module.f(_f_electron_liquid_glass).unstable_setVariant(glassId, 8);
+            }
+        });
+    }
+    _f_electron.app.whenReady().then(async ()=>{
+        customAppStore = new _f_CustomAppStore.CustomAppStore();
+        _f_apps.initCustomAppStore(customAppStore);
+        appAdapters = await _f_apps.getAvailableAdapters();
+        mcpManager = new _f_MCPConfigManager.MCPConfigManager(appAdapters);
+        masterStore = new _f_MasterServerStore.MasterServerStore();
+        mcpStudioService = new _f_MCPStudioService.MCPStudioService();
+        backupService = new _f_BackupService.BackupService();
+        for (const adapter of appAdapters){
+            const configExists = await adapter.configExists();
+            if (configExists) {
+                const servers = await mcpManager.readAppConfig(adapter);
+                await backupService.createBackup(adapter.name, servers);
+                appSyncStates.set(adapter.name, true);
+            }
+        }
+        const appServers = await mcpManager.getAllServers();
+        await masterStore.syncFromAppConfigs(appServers);
+        setupIPCHandlers();
+        createWindow();
+        if (mainWindow) {
+            mcpStudioService.setMainWindow(mainWindow);
+        }
+        _f_electron.app.on('activate', ()=>{
+            if (_f_electron.BrowserWindow.getAllWindows().length === 0) {
+                createWindow();
+            }
+        });
+    });
+    _f_electron.app.on('window-all-closed', ()=>{
+        if (mcpStudioService) {
+            mcpStudioService.stopAllServers();
+        }
+        _f_electron.app.quit();
+    });
+    function setupIPCHandlers() {
+        _f_electron.ipcMain.handle('get-apps', async ()=>{
+            return appAdapters.map((adapter)=>{
+                const isCustom = 'isCustom' in adapter && adapter.isCustom === true;
+                return {
+                    name: adapter.name,
+                    icon: adapter.icon,
+                    color: adapter.color,
+                    syncEnabled: appSyncStates.get(adapter.name) ?? true,
+                    isCustom
+                };
+            });
+        });
+        _f_electron.ipcMain.handle('get-all-servers', async ()=>{
+            return await masterStore.getAllServers();
+        });
+        _f_electron.ipcMain.handle('get-app-servers', async (_, appName)=>{
+            const adapter = appAdapters.find((a)=>a.name === appName);
+            if (!adapter) {
+                throw new Error(`App not found: ${appName}`);
+            }
+            return await mcpManager.readAppConfig(adapter);
+        });
+        _f_electron.ipcMain.handle('add-server', async (_, name, command, env, appNames, transportType, url)=>{
+            const isStreaming = transportType === 'sse' || transportType === 'streamable-http';
+            const parsed = isStreaming ? {
+                command: '',
+                args: []
+            } : mcpManager.parseCommand(command);
+            const server = {
+                command: parsed.command,
+                args: parsed.args,
+                ...env && {
+                    env
+                },
+                ...transportType && {
+                    transportType: transportType
+                },
+                ...url && {
+                    url
+                }
+            };
+            const targetApps = appNames ?? [];
+            const success = isStreaming ? true : targetApps.length > 0 ? await mcpManager.addServer(name, server, targetApps) : true;
+            if (success) {
+                await masterStore.addServer({
+                    id: name,
+                    name: name.charAt(0).toUpperCase() + name.slice(1),
+                    command: parsed.command,
+                    args: parsed.args,
+                    env,
+                    transportType: transportType || 'stdio',
+                    url,
+                    enabled: true,
+                    permissions: 'always_ask',
+                    apps: targetApps
+                });
+            }
+            return success;
+        });
+        _f_electron.ipcMain.handle('update-server', async (_, name, command, env, appNames, transportType, url)=>{
+            const isStreaming = transportType === 'sse' || transportType === 'streamable-http';
+            const parsed = isStreaming ? {
+                command: '',
+                args: []
+            } : mcpManager.parseCommand(command);
+            const server = {
+                command: parsed.command,
+                args: parsed.args,
+                ...env && {
+                    env
+                },
+                ...transportType && {
+                    transportType: transportType
+                },
+                ...url && {
+                    url
+                }
+            };
+            const success = isStreaming ? true : await mcpManager.updateServer(name, server, appNames);
+            if (success) {
+                await masterStore.updateServer(name, {
+                    command: parsed.command,
+                    args: parsed.args,
+                    env,
+                    transportType: transportType,
+                    url,
+                    apps: appNames
+                });
+            }
+            return success;
+        });
+        _f_electron.ipcMain.handle('remove-server', async (_, name, appNames)=>{
+            const success = await mcpManager.removeServer(name, appNames);
+            if (success) {
+                if (!appNames) {
+                    await masterStore.removeServer(name);
+                } else {
+                    for (const appName of appNames){
+                        await masterStore.removeAppFromServer(name, appName);
+                    }
+                    const server = await masterStore.getServer(name);
+                    if (server && server.apps.length === 0) {
+                        await masterStore.removeServer(name);
+                    }
+                }
+            }
+            return success;
+        });
+        _f_electron.ipcMain.handle('toggle-server', async (_, name, enabled, appNames)=>{
+            const masterServer = await masterStore.getServer(name);
+            if (!masterServer) {
+                return false;
+            }
+            const isStreaming = masterServer.transportType && masterServer.transportType !== 'stdio';
+            const server = isStreaming ? {
+                command: '',
+                args: [],
+                url: masterServer.url,
+                transportType: masterServer.transportType,
+                env: masterServer.env,
+                settings: masterServer.settings,
+                enabled: enabled
+            } : {
+                command: masterServer.command,
+                args: masterServer.args,
+                env: masterServer.env,
+                settings: masterServer.settings,
+                enabled: enabled
+            };
+            const success = await mcpManager.toggleServer(name, enabled, server, appNames);
+            if (success) {
+                if (!appNames) {
+                    await masterStore.toggleServer(name, enabled);
+                } else if (enabled) {
+                    for (const appName of appNames){
+                        await masterStore.addAppToServer(name, appName);
+                    }
+                } else {
+                    for (const appName of appNames){
+                        await masterStore.removeAppFromServer(name, appName);
+                    }
+                }
+            }
+            return success;
+        });
+        _f_electron.ipcMain.handle('parse-command', async (_, command)=>{
+            return mcpManager.parseCommand(command);
+        });
+        _f_electron.ipcMain.handle('sync-servers', async ()=>{
+            const allServers = await masterStore.getAllServers();
+            for (const server of allServers){
+                if (server.applyToAll && server.enabled) {
+                    const syncedApps = appAdapters.filter((a)=>appSyncStates.get(a.name) ?? true).map((a)=>a.name);
+                    for (const appName of syncedApps){
+                        const adapter = appAdapters.find((a)=>a.name === appName);
+                        if (adapter) {
+                            const appConfig = await mcpManager.readAppConfig(adapter);
+                            const isStreaming = server.transportType && server.transportType !== 'stdio';
+                            appConfig[server.id] = isStreaming ? {
+                                command: '',
+                                args: [],
+                                url: server.url,
+                                transportType: server.transportType,
+                                env: server.env,
+                                settings: server.settings
+                            } : {
+                                command: server.command,
+                                args: server.args,
+                                env: server.env,
+                                settings: server.settings
+                            };
+                            await mcpManager.writeAppConfig(adapter, appConfig);
+                        }
+                    }
+                }
+            }
+            return allServers;
+        });
+        _f_electron.ipcMain.handle('get-master-servers', async ()=>{
+            return await masterStore.getAllServers();
+        });
+        _f_electron.ipcMain.handle('update-master-server', async (_, id, updates)=>{
+            const result = await masterStore.updateServer(id, updates);
+            if (result && updates.applyToAll !== undefined) {
+                const server = await masterStore.getServer(id);
+                if (server) {
+                    const syncedApps = appAdapters.filter((a)=>appSyncStates.get(a.name) ?? true).map((a)=>a.name);
+                    if (updates.applyToAll && server.enabled) {
+                        for (const appName of syncedApps){
+                            const adapter = appAdapters.find((a)=>a.name === appName);
+                            if (adapter) {
+                                const appConfig = await mcpManager.readAppConfig(adapter);
+                                const isStreaming = server.transportType && server.transportType !== 'stdio';
+                                appConfig[server.id] = isStreaming ? {
+                                    command: '',
+                                    args: [],
+                                    url: server.url,
+                                    transportType: server.transportType,
+                                    env: server.env,
+                                    settings: server.settings
+                                } : {
+                                    command: server.command,
+                                    args: server.args,
+                                    env: server.env,
+                                    settings: server.settings
+                                };
+                                await mcpManager.writeAppConfig(adapter, appConfig);
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
+        });
+        _f_electron.ipcMain.handle('studio:start-server', async (_, serverId)=>{
+            const server = await masterStore.getServer(serverId);
+            if (!server) {
+                return {
+                    success: false,
+                    error: 'Server not found'
+                };
+            }
+            return await mcpStudioService.startServer(server);
+        });
+        _f_electron.ipcMain.handle('studio:stop-server', async (_, serverId)=>{
+            return await mcpStudioService.stopServer(serverId);
+        });
+        _f_electron.ipcMain.handle('studio:list-tools', async (_, serverId)=>{
+            try {
+                return await mcpStudioService.listTools(serverId);
+            } catch (error) {
+                throw new Error(error instanceof Error ? error.message : 'Failed to list tools');
+            }
+        });
+        _f_electron.ipcMain.handle('studio:call-tool', async (_, serverId, toolName, args)=>{
+            try {
+                return await mcpStudioService.callTool(serverId, toolName, args);
+            } catch (error) {
+                throw new Error(error instanceof Error ? error.message : 'Failed to call tool');
+            }
+        });
+        _f_electron.ipcMain.handle('studio:is-server-running', async (_, serverId)=>{
+            return mcpStudioService.isServerRunning(serverId);
+        });
+        _f_electron.ipcMain.handle('get-app-sync-state', async (_, appName)=>{
+            return appSyncStates.get(appName) ?? true;
+        });
+        _f_electron.ipcMain.handle('toggle-app-sync', async (_, appName, enabled)=>{
+            const adapter = appAdapters.find((a)=>a.name === appName);
+            if (!adapter) {
+                throw new Error(`App not found: ${appName}`);
+            }
+            if (!enabled) {
+                const backup = await backupService.getBackup(appName);
+                if (backup) {
+                    await mcpManager.writeAppConfig(adapter, backup);
+                }
+            }
+            appSyncStates.set(appName, enabled);
+            return true;
+        });
+        _f_electron.ipcMain.handle('has-app-backup', async (_, appName)=>{
+            return await backupService.hasBackup(appName);
+        });
+        _f_electron.ipcMain.handle('get-app-backup', async (_, appName)=>{
+            return await backupService.getBackup(appName);
+        });
+        _f_electron.ipcMain.handle('get-app-current-config', async (_, appName)=>{
+            const adapter = appAdapters.find((a)=>a.name === appName);
+            if (!adapter) {
+                throw new Error(`App not found: ${appName}`);
+            }
+            return await mcpManager.readAppConfig(adapter);
+        });
+        _f_electron.ipcMain.handle('get-app-applied-servers', async (_, appName)=>{
+            const allServers = await masterStore.getAllServers();
+            return allServers.filter((s)=>s.applyToAll || s.apps.includes(appName));
+        });
+        _f_electron.ipcMain.handle('export-app-data', async ()=>{
+            const AdmZip = global.nodeRequire('adm-zip', true);
+            const zip = new AdmZip();
+            const masterServers = await masterStore.getAllServers();
+            const mcpServers = {};
+            masterServers.forEach((server)=>{
+                const isStreaming = server.transportType && server.transportType !== 'stdio';
+                mcpServers[server.id] = isStreaming ? {
+                    url: server.url,
+                    transportType: server.transportType,
+                    ...server.env && {
+                        env: server.env
+                    }
+                } : {
+                    command: server.command,
+                    args: server.args,
+                    ...server.env && {
+                        env: server.env
+                    }
+                };
+            });
+            zip.addFile('mcp.json', Buffer.from(JSON.stringify({
+                mcpServers
+            }, null, 2)));
+            const appData = {
+                apps: appAdapters.map((a)=>({
+                        name: a.name,
+                        icon: a.icon,
+                        color: a.color,
+                        syncEnabled: appSyncStates.get(a.name) ?? true
+                    })),
+                masterServers: masterServers,
+                version: _f_electron.app.getVersion(),
+                exportDate: new Date().toISOString()
+            };
+            zip.addFile('app-data.json', Buffer.from(JSON.stringify(appData, null, 2)));
+            for (const adapter of appAdapters){
+                const backup = await backupService.getBackup(adapter.name);
+                if (backup) {
+                    zip.addFile(`backups/${adapter.name}.json`, Buffer.from(JSON.stringify({
+                        config: backup
+                    }, null, 2)));
+                }
+            }
+            return zip.toBuffer();
+        });
+        _f_electron.ipcMain.handle('import-app-data-zip', async (_, zipBuffer)=>{
+            const AdmZip = global.nodeRequire('adm-zip', true);
+            const zip = new AdmZip(zipBuffer);
+            const appDataEntry = zip.getEntry('app-data.json');
+            if (appDataEntry) {
+                const appData = JSON.parse(appDataEntry.getData().toString('utf8'));
+                if (appData.masterServers) {
+                    for (const server of appData.masterServers){
+                        await masterStore.addServer(server);
+                    }
+                }
+                if (appData.apps) {
+                    for (const appInfo of appData.apps){
+                        appSyncStates.set(appInfo.name, appInfo.syncEnabled ?? true);
+                    }
+                }
+            }
+            const backupEntries = zip.getEntries().filter((e)=>e.entryName.startsWith('backups/'));
+            for (const entry of backupEntries){
+                const appName = entry.entryName.replace('backups/', '').replace('.json', '');
+                const backupData = JSON.parse(entry.getData().toString('utf8'));
+                if (backupData.config) {
+                    await backupService.createBackup(appName, backupData.config);
+                }
+            }
+            return true;
+        });
+        _f_electron.ipcMain.handle('get-custom-apps', async ()=>{
+            return await customAppStore.getAllApps();
+        });
+        _f_electron.ipcMain.handle('add-custom-app', async (_, customApp)=>{
+            const success = await customAppStore.addApp(customApp);
+            if (success) {
+                const adapter = new _f_apps.CustomAppAdapter(customApp);
+                appAdapters.push(adapter);
+                mcpManager = new _f_MCPConfigManager.MCPConfigManager(appAdapters);
+            }
+            return success;
+        });
+        _f_electron.ipcMain.handle('remove-custom-app', async (_, id)=>{
+            const customApp = await customAppStore.getApp(id);
+            if (customApp) {
+                const success = await customAppStore.removeApp(id);
+                if (success) {
+                    appAdapters = appAdapters.filter((a)=>a.name !== customApp.name);
+                    mcpManager = new _f_MCPConfigManager.MCPConfigManager(appAdapters);
+                }
+                return success;
+            }
+            return false;
+        });
+    }
+}
+,
+"87f18120":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "parseJSON", ()=>parseJSON);
+    module.o(exports, "stringifyJSON", ()=>stringifyJSON);
+    function parseJSON(content) {
+        const lines = content.split('\n');
+        const cleanedLines = [];
+        for (let line of lines){
+            const trimmed = line.trim();
+            if (trimmed.startsWith('//')) {
+                continue;
+            }
+            const commentIndex = line.indexOf('//');
+            if (commentIndex !== -1) {
+                const beforeComment = line.substring(0, commentIndex);
+                const inString = isInsideString(beforeComment);
+                if (!inString) {
+                    cleanedLines.push(beforeComment);
+                    continue;
+                }
+            }
+            cleanedLines.push(line);
+        }
+        let cleanedContent = cleanedLines.join('\n');
+        cleanedContent = cleanedContent.replace(/,(\s*[}\]])/g, '$1');
+        return JSON.parse(cleanedContent);
+    }
+    function isInsideString(text) {
+        let inString = false;
+        let escapeNext = false;
+        let quoteChar = '';
+        for(let i = 0; i < text.length; i++){
+            const char = text[i];
+            if (escapeNext) {
+                escapeNext = false;
+                continue;
+            }
+            if (char === '\\') {
+                escapeNext = true;
+                continue;
+            }
+            if ((char === '"' || char === "'") && !inString) {
+                inString = true;
+                quoteChar = char;
+            } else if (char === quoteChar && inString) {
+                inString = false;
+                quoteChar = '';
+            }
+        }
+        return inString;
+    }
+    function stringifyJSON(data, space = 2) {
+        return JSON.stringify(data, null, space);
+    }
+}
+,
+"8a78f2eb":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "CustomAppAdapter", ()=>CustomAppAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_smol_toml = module.w(farmRequire('smol-toml'));
+    var toml = _f_smol_toml;
+    var _f_FileService = farmRequire("454c8ae6");
+    class CustomAppAdapter {
+        name;
+        icon;
+        color;
+        isCustom = true;
+        config;
+        constructor(config){
+            this.config = config;
+            this.name = config.name;
+            this.icon = config.icon || 'ph:puzzle-piece-light';
+            this.color = config.color || '#888888';
+        }
+        getPath() {
+            return this.config.configPath.replace(/^~/, os.homedir());
+        }
+        async configExists() {
+            return true;
+        }
+        async getServers() {
+            const expandedPath = this.getPath();
+            if (!fs.existsSync(expandedPath)) {
+                return {};
+            }
+            try {
+                if (this.config.configFormat === 'toml') {
+                    const content = await fs.promises.readFile(expandedPath, 'utf-8');
+                    const data = toml.parse(content);
+                    return this.extractServers(data);
+                } else {
+                    const data = await _f_FileService.FileService.readJSON(expandedPath);
+                    return this.extractServers(data);
+                }
+            } catch (error) {
+                console.error(`Error reading ${this.name} config:`, error);
+                return {};
+            }
+        }
+        extractServers(data) {
+            if (!data) return {};
+            const keyPath = this.config.configKey.split('.');
+            let current = data;
+            for (const key of keyPath){
+                if (current && typeof current === 'object' && key in current) {
+                    current = current[key];
+                } else {
+                    return {};
+                }
+            }
+            if (!current || typeof current !== 'object') return {};
+            if (Array.isArray(current)) {
+                const servers = {};
+                for (const s of current){
+                    if (s.name) {
+                        servers[s.name] = {
+                            command: s.command || '',
+                            args: s.args || [],
+                            env: s.env,
+                            settings: s
+                        };
+                    }
+                }
+                return servers;
+            }
+            const servers = {};
+            for (const [key, value] of Object.entries(current)){
+                const serverData = value;
+                servers[key] = {
+                    command: serverData.command || '',
+                    args: serverData.args || [],
+                    env: serverData.env,
+                    settings: serverData.settings || serverData
+                };
+            }
+            return servers;
+        }
+        async setServers(servers) {
+            const expandedPath = this.getPath();
+            try {
+                let data = {};
+                if (fs.existsSync(expandedPath)) {
+                    if (this.config.configFormat === 'toml') {
+                        const content = await fs.promises.readFile(expandedPath, 'utf-8');
+                        data = toml.parse(content);
+                    } else {
+                        data = await _f_FileService.FileService.readJSON(expandedPath) || {};
+                    }
+                }
+                const keyPath = this.config.configKey.split('.');
+                let current = data;
+                for(let i = 0; i < keyPath.length - 1; i++){
+                    const key = keyPath[i];
+                    if (!(key in current)) {
+                        current[key] = {};
+                    }
+                    current = current[key];
+                }
+                const finalKey = keyPath[keyPath.length - 1];
+                const transformedServers = {};
+                for (const [key, server] of Object.entries(servers)){
+                    transformedServers[key] = {
+                        command: server.command,
+                        args: server.args || [],
+                        ...server.env && {
+                            env: server.env
+                        }
+                    };
+                }
+                current[finalKey] = transformedServers;
+                const dir = path.dirname(expandedPath);
+                if (!fs.existsSync(dir)) {
+                    await fs.promises.mkdir(dir, {
+                        recursive: true
+                    });
+                }
+                if (this.config.configFormat === 'toml') {
+                    const content = toml.stringify(data);
+                    await fs.promises.writeFile(expandedPath, content, 'utf-8');
+                } else {
+                    await _f_FileService.FileService.writeJSON(expandedPath, data);
+                }
+                return true;
+            } catch (error) {
+                console.error(`Error writing ${this.name} config:`, error);
+                return false;
+            }
+        }
+    }
+}
+,
+"8fb0384e":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "QwenAdapter", ()=>QwenAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_FileService = farmRequire("454c8ae6");
+    class QwenAdapter {
+        name = 'Qwen Code CLI';
+        icon = 'https://assets.alicdn.com/g/qwenweb/qwen-webui-fe/0.0.191/static/favicon.png';
+        color = '#5f46e8';
+        getPath() {
+            return path.join(os.homedir(), '.qwen/settings.json');
+        }
+        async configExists() {
+            return fs.existsSync(this.getPath());
+        }
+        async getServers() {
+            const data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data || !data.mcpServers) {
+                return {};
+            }
+            return data.mcpServers;
+        }
+        async setServers(servers) {
+            let data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data) {
+                data = {};
+            }
+            data.mcpServers = servers;
+            return await _f_FileService.FileService.writeJSON(this.getPath(), data);
+        }
+    }
+}
+,
+"94d886ec":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "CursorAdapter", ()=>CursorAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_VSCodeAdapter = farmRequire("3624460c");
+    class CursorAdapter extends _f_VSCodeAdapter.VSCodeAdapter {
+        name = 'Cursor';
+        icon = 'https://www.cursor.com/favicon.ico';
+        color = '#000000';
+        getPath() {
+            return path.join(os.homedir(), 'Library/Application Support/Cursor/User/globalStorage/mcp.json');
+        }
+        async configExists() {
+            const appPath = '/Applications/Cursor.app';
+            return fs.existsSync(appPath);
+        }
+    }
+}
+,
+"cc18dfe6":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "KiloCodeAdapter", ()=>KiloCodeAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_FileService = farmRequire("454c8ae6");
+    class KiloCodeAdapter {
+        name = 'Kilo Code';
+        icon = 'https://kilocode.ai/docs/img/kilo-v1.svg';
+        color = '#ede749';
+        getConfigPaths() {
+            const homeDir = os.homedir();
+            return [
+                path.join(homeDir, 'Library/Application Support/Code/User/globalStorage/kilocode.kilo-code/settings/mcp_settings.json'),
+                path.join(homeDir, 'Library/Application Support/Cursor/User/globalStorage/kilocode.kilo-code/settings/mcp_settings.json'),
+                path.join(homeDir, 'Library/Application Support/VSCodium/User/globalStorage/kilocode.kilo-code/settings/mcp_settings.json')
+            ];
+        }
+        findExistingPath() {
+            for (const configPath of this.getConfigPaths()){
+                if (fs.existsSync(configPath)) {
+                    return configPath;
+                }
+            }
+            return null;
+        }
+        getPath() {
+            const existingPath = this.findExistingPath();
+            if (existingPath) {
+                return existingPath;
+            }
+            return this.getConfigPaths()[0];
+        }
+        async configExists() {
+            return this.findExistingPath() !== null;
+        }
+        async getServers() {
+            const data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data || !data.mcpServers) {
+                return {};
+            }
+            return data.mcpServers;
+        }
+        async setServers(servers) {
+            let data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data) {
+                data = {};
+            }
+            data.mcpServers = servers;
+            return await _f_FileService.FileService.writeJSON(this.getPath(), data);
+        }
+    }
+}
+,
+"ea3ba68a":function  (module, exports, farmRequire, farmDynamicRequire) {}
+,
+"f8cca18d":function  (module, exports, farmRequire, farmDynamicRequire) {
+    module._m(exports);
+    module.o(exports, "AntigravityAdapter", ()=>AntigravityAdapter);
+    var _f_fs = module.w(farmRequire('fs'));
+    var fs = _f_fs;
+    var _f_path = module.w(farmRequire('path'));
+    var path = _f_path;
+    var _f_os = module.w(farmRequire('os'));
+    var os = _f_os;
+    var _f_VSCodeAdapter = farmRequire("3624460c");
+    var _f_FileService = farmRequire("454c8ae6");
+    var _f_packageRunner = farmRequire("6d8f9985");
+    class AntigravityAdapter extends _f_VSCodeAdapter.VSCodeAdapter {
+        name = 'Google Antigravity';
+        icon = 'https://antigravity.google/favicon.ico';
+        color = '#1a73e8';
+        getPath() {
+            return path.join(os.homedir(), '.gemini/antigravity/mcp_config.json');
+        }
+        async configExists() {
+            return fs.existsSync(this.getPath());
+        }
+        async getServers() {
+            const data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data || !data.mcpServers) {
+                return {};
+            }
+            return data.mcpServers;
+        }
+        async setServers(servers) {
+            let data = await _f_FileService.FileService.readJSON(this.getPath());
+            if (!data) {
+                data = {};
+            }
+            const transformedServers = {};
+            for (const [key, server] of Object.entries(servers)){
+                const isStreamingViaTransport = server.transportType && server.transportType !== 'stdio' && server.url;
+                const isStreamingViaSettings = server.settings?.type === 'http' && server.settings?.url;
+                if (isStreamingViaTransport && server.url) {
+                    const remoteConfig = _f_packageRunner.createMcpRemoteConfig(server.url, server.settings?.headers);
+                    transformedServers[key] = {
+                        command: remoteConfig.command,
+                        args: remoteConfig.args,
+                        ...server.env && {
+                            env: server.env
+                        }
+                    };
+                } else if (isStreamingViaSettings) {
+                    const remoteConfig = _f_packageRunner.createMcpRemoteConfig(server.settings.url, server.settings?.headers);
+                    transformedServers[key] = {
+                        command: remoteConfig.command,
+                        args: remoteConfig.args,
+                        ...server.env && {
+                            env: server.env
+                        }
+                    };
+                } else if (server.command) {
+                    transformedServers[key] = {
+                        command: server.command,
+                        args: server.args || [],
+                        ...server.env && {
+                            env: server.env
+                        }
+                    };
+                }
+            }
+            data.mcpServers = transformedServers;
+            return await _f_FileService.FileService.writeJSON(this.getPath(), data);
+        }
+    }
+}
+,});global['e20309b3317686f6c8a7cfe5559430f9'].__farm_module_system__.setInitialLoadedResources([]);global['e20309b3317686f6c8a7cfe5559430f9'].__farm_module_system__.setDynamicModuleResourcesMap([],{  });var farmModuleSystem = global['e20309b3317686f6c8a7cfe5559430f9'].__farm_module_system__;farmModuleSystem.bootstrap();var entry = farmModuleSystem.require("799f0da0");
 //# sourceMappingURL=main.js.map

@@ -4,6 +4,7 @@ import * as os from 'os';
 import { MCPServer, MCPServers } from '../../shared/types';
 import { AppAdapter } from './AppAdapter';
 import { FileService } from '../services/FileService';
+import { createMcpRemoteConfig } from '../utils/packageRunner';
 
 export class ZedAdapter implements AppAdapter {
   name = 'Zed';
@@ -60,13 +61,34 @@ export class ZedAdapter implements AppAdapter {
     
     const transformedServers: Record<string, any> = {};
     for (const [key, server] of Object.entries(servers)) {
-      transformedServers[key] = {
-        command: server.command,
-        args: server.args,
-        env: server.env || null,
-        settings: server.settings || undefined,
-        enabled: server.enabled ?? true,
-      };
+      const isStreamingViaTransport = server.transportType && server.transportType !== 'stdio' && server.url;
+      const isStreamingViaSettings = server.settings?.type === 'http' && server.settings?.url;
+      
+      if (isStreamingViaTransport && server.url) {
+        const remoteConfig = createMcpRemoteConfig(server.url, server.settings?.headers);
+        transformedServers[key] = {
+          command: remoteConfig.command,
+          args: remoteConfig.args,
+          env: server.env || null,
+          enabled: server.enabled ?? true,
+        };
+      } else if (isStreamingViaSettings) {
+        const remoteConfig = createMcpRemoteConfig(server.settings!.url, server.settings?.headers);
+        transformedServers[key] = {
+          command: remoteConfig.command,
+          args: remoteConfig.args,
+          env: server.env || null,
+          enabled: server.enabled ?? true,
+        };
+      } else {
+        transformedServers[key] = {
+          command: server.command,
+          args: server.args,
+          env: server.env || null,
+          settings: server.settings || undefined,
+          enabled: server.enabled ?? true,
+        };
+      }
     }
     
     data.context_servers = {

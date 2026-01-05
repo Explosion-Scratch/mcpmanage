@@ -29,7 +29,7 @@ import json from 'highlight.js/lib/languages/json';
 import markdown from 'highlight.js/lib/languages/markdown';
 import 'highlight.js/styles/github.css';
 import { cn } from './lib/utils';
-import { Button, Input, Label, Switch, Badge, ServerIcon, IconPicker } from './components/ui';
+import { Button, Input, Label, Switch, Badge, ServerIcon, IconPicker, ToastContainer, toast } from './components/ui';
 import type { AppConfig, MCPServerWithMetadata, PermissionLevel } from '../../shared/types';
 
 hljs.registerLanguage('json', json);
@@ -106,24 +106,7 @@ export default function MCPManager() {
     
     setApps(Array.isArray(appsData) ? appsData : []);
     
-    const serversWithMeta: MCPServerWithMetadata[] = Array.isArray(serversData) 
-      ? serversData.map(server => ({
-          id: server.id,
-          name: server.name,
-          description: server.description,
-          command: server.command,
-          args: server.args,
-          env: server.env,
-          settings: server.settings,
-          source: server.source,
-          enabled: server.enabled,
-          iconUrl: server.iconUrl,
-          permissions: server.permissions,
-          apps: server.apps,
-          applyToAll: server.applyToAll,
-        }))
-      : [];
-    setServers(serversWithMeta);
+    setServers(Array.isArray(serversData) ? serversData : []);
   };
 
   const toggleServerEnabled = async (id: string) => {
@@ -135,13 +118,19 @@ export default function MCPManager() {
     setServers(servers.map(s => (s.id === id ? { ...s, enabled: newEnabled } : s)));
   };
 
-  const handleAddServer = async (newServer: MCPServerWithMetadata) => {
+  const handleAddServer = async (newServer: MCPServerWithMetadata & { transportType?: string; url?: string }) => {
+    const isStreaming = newServer.transportType && newServer.transportType !== 'stdio';
+    const command = isStreaming ? '' : `${newServer.command} ${(newServer.args || []).join(' ')}`;
     const success = await window.electronAPI.addServer(
       newServer.id,
-      `${newServer.command} ${(newServer.args || []).join(' ')}`,
-      newServer.env
+      command,
+      newServer.env,
+      [],
+      newServer.transportType,
+      newServer.url
     );
     if (success) {
+      toast.success(`Server "${newServer.name}" added successfully`);
       await loadData();
     }
   };
@@ -159,6 +148,8 @@ export default function MCPManager() {
         permissions: updatedServer.permissions,
         apps: updatedServer.apps,
         applyToAll: updatedServer.applyToAll,
+        transportType: updatedServer.transportType,
+        url: updatedServer.url,
       }
     );
     if (success) {
@@ -167,8 +158,10 @@ export default function MCPManager() {
   };
 
   const handleDeleteServer = async (id: string) => {
+    const server = servers.find(s => s.id === id);
     const success = await window.electronAPI.removeServer(id);
     if (success) {
+      toast.success(`Server "${server?.name || id}" removed`);
       await loadData();
       if (selectedServerId === id) setSelectedServerId(null);
     }
@@ -266,6 +259,7 @@ export default function MCPManager() {
         {activeTab === 'studio' && <StudioView servers={servers.filter(s => s.enabled)} />}
         {activeTab === 'about' && <AboutView />}
       </div>
+      <ToastContainer />
     </div>
   );
 }
@@ -339,6 +333,8 @@ function ManageServersView({
   const [newDesc, setNewDesc] = useState('');
   const [jsonImport, setJsonImport] = useState('');
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const [transportType, setTransportType] = useState<'stdio' | 'sse' | 'streamable-http'>('stdio');
+  const [serverUrl, setServerUrl] = useState('');
   const iconButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -351,9 +347,13 @@ function ManageServersView({
           setNewCmd('');
           setNewIcon('');
           setNewDesc('');
+          setTransportType('stdio');
+          setServerUrl('');
         } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
           e.preventDefault();
-          if (newCmd && newName) {
+          const isStreaming = transportType !== 'stdio';
+          const hasValidInput = isStreaming ? (serverUrl && newName) : (newCmd && newName);
+          if (hasValidInput) {
             handleAddSubmit(e as any);
           }
         }
@@ -383,46 +383,66 @@ function ManageServersView({
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parts = newCmd.trim().split(/\s+/);
+    const isStreaming = transportType !== 'stdio';
+    const parts = isStreaming ? ['', []] : newCmd.trim().split(/\s+/);
     onAdd({
       id: newName.toLowerCase().replace(/\s+/g, '-'),
       name: newName,
-      command: parts[0],
-      args: parts.slice(1),
+      command: isStreaming ? '' : (parts[0] as string),
+      args: isStreaming ? [] : (parts.slice(1) as string[]),
       iconUrl: newIcon || undefined,
       description: newDesc || undefined,
       enabled: true,
       permissions: 'always_ask',
-      apps: (apps || []).map(a => a.name),
-    });
+      apps: [],
+      applyToAll: false,
+      transportType,
+      url: isStreaming ? serverUrl : undefined,
+    } as any);
     setIsAdding(false);
     setNewName('');
     setNewCmd('');
     setNewIcon('');
     setNewDesc('');
+    setTransportType('stdio');
+    setServerUrl('');
   };
 
   const handleMockImport = async () => {
     try {
       const parsed = JSON.parse(jsonImport);
-      const importedServers: MCPServerWithMetadata[] = Object.entries(
+      const importedServers = Object.entries(
         parsed.mcpServers || {}
-      ).map(([key, val]: [string, any]) => ({
-        id: key,
-        name: key.charAt(0).toUpperCase() + key.slice(1),
-        command: val.command,
-        args: val.args || [],
-        env: val.env,
-        enabled: true,
-        permissions: 'always_ask' as PermissionLevel,
-        apps: (apps || []).map(a => a.name),
-      }));
+      ).map(([key, val]: [string, any]) => {
+        const hasUrl = val.url && (val.url.startsWith('http://') || val.url.startsWith('https://'));
+        const detectedTransport = hasUrl
+          ? (val.transportType || 'streamable-http')
+          : 'stdio';
+
+        return {
+          id: key,
+          name: key.charAt(0).toUpperCase() + key.slice(1),
+          command: val.command || '',
+          args: val.args || [],
+          env: val.env,
+          enabled: true,
+          permissions: 'always_ask' as PermissionLevel,
+          apps: [],
+          applyToAll: false,
+          transportType: detectedTransport,
+          url: val.url,
+        };
+      });
 
       for (const server of importedServers) {
+        const isStreaming = server.transportType !== 'stdio';
         await window.electronAPI.addServer(
           server.id,
-          `${server.command} ${(server.args || []).join(' ')}`,
-          server.env
+          isStreaming ? '' : `${server.command} ${(server.args || []).join(' ')}`,
+          server.env,
+          undefined,
+          server.transportType,
+          server.url
         );
       }
 
@@ -465,22 +485,85 @@ function ManageServersView({
 
             <div className="space-y-4">
               <div>
-                <Label>Installation Command *</Label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <TerminalSquare className="w-4 h-4 text-[var(--text-tertiary)]" />
+                <Label>Server Type</Label>
+                <div className="flex rounded-lg bg-[var(--bg-badge)] p-1 gap-1 mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setTransportType('stdio')}
+                    className={cn(
+                      'flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all',
+                      transportType === 'stdio'
+                        ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    )}
+                  >
+                    Local Command
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTransportType('streamable-http')}
+                    className={cn(
+                      'flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all',
+                      transportType === 'streamable-http'
+                        ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    )}
+                  >
+                    Remote (HTTP)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTransportType('sse')}
+                    className={cn(
+                      'flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all',
+                      transportType === 'sse'
+                        ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    )}
+                  >
+                    Remote (SSE)
+                  </button>
+                </div>
+              </div>
+
+              {transportType === 'stdio' ? (
+                <div>
+                  <Label>Installation Command *</Label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <TerminalSquare className="w-4 h-4 text-[var(--text-tertiary)]" />
+                    </div>
+                    <Input
+                      required
+                      className="pl-9 font-mono text-xs"
+                      placeholder="npx -y @modelcontextprotocol/server-name ..."
+                      value={newCmd}
+                      onChange={e => setNewCmd(e.target.value)}
+                      spellCheck={false}
+                      autoFocus
+                    />
                   </div>
+                </div>
+              ) : (
+                <div>
+                  <Label>Server URL *</Label>
                   <Input
                     required
-                    className="pl-9 font-mono text-xs"
-                    placeholder="npx -y @modelcontextprotocol/server-name ..."
-                    value={newCmd}
-                    onChange={e => setNewCmd(e.target.value)}
+                    type="url"
+                    className="font-mono text-xs"
+                    placeholder={transportType === 'streamable-http' ? 'http://localhost:8000/mcp' : 'http://localhost:8000/sse'}
+                    value={serverUrl}
+                    onChange={e => setServerUrl(e.target.value)}
                     spellCheck={false}
                     autoFocus
                   />
+                  <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                    {transportType === 'streamable-http' 
+                      ? 'Modern Streamable HTTP transport endpoint'
+                      : 'Legacy SSE transport endpoint'}
+                  </p>
                 </div>
-              </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -564,7 +647,7 @@ function ManageServersView({
             className="gap-1.5 hidden sm:flex"
             onClick={async () => {
               const buffer = await window.electronAPI.exportAppData();
-              const blob = new Blob([buffer], { type: 'application/zip' });
+              const blob = new Blob([new Uint8Array(buffer)], { type: 'application/zip' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
@@ -591,6 +674,7 @@ function ManageServersView({
             size="icon"
             onClick={async () => {
               await window.electronAPI.syncServers();
+              toast.success('Servers synced to all apps');
               onRefresh();
             }}
             title="Sync all servers to apps"
@@ -670,7 +754,8 @@ function ManageServersView({
               <tr>
                 <th className="px-4 py-3 w-12 text-center">On</th>
                 <th className="px-4 py-3">Server</th>
-                <th className="px-4 py-3 hidden sm:table-cell">Command</th>
+                <th className="px-4 py-3 w-20 hidden sm:table-cell">Type</th>
+                <th className="px-4 py-3 hidden sm:table-cell">Connection</th>
                 <th className="px-4 py-3 w-32">Apps</th>
                 <th className="px-4 py-3 w-16"></th>
               </tr>
@@ -700,10 +785,28 @@ function ManageServersView({
                     </div>
                   </td>
                   <td
+                    className="px-4 py-3 cursor-pointer hidden sm:table-cell"
+                    onClick={() => onSelect(server.id)}
+                  >
+                    {server.transportType && server.transportType !== 'stdio' ? (
+                      <Badge>
+                        {server.transportType === 'streamable-http' ? 'HTTP' : 'SSE'}
+                      </Badge>
+                    ) : (
+                      <Badge>Local</Badge>
+                    )}
+                  </td>
+                  <td
                     className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)] max-w-[300px] truncate cursor-pointer hidden sm:table-cell"
                     onClick={() => onSelect(server.id)}
                   >
-                    <span className="text-[var(--text-accent)]">{server.command}</span> {(server.args || []).join(' ')}
+                    {server.transportType && server.transportType !== 'stdio' ? (
+                      <span className="text-[var(--text-accent)]">{server.url}</span>
+                    ) : (
+                      <>
+                        <span className="text-[var(--text-accent)]">{server.command}</span> {(server.args || []).join(' ')}
+                      </>
+                    )}
                   </td>
                   <td className="px-4 py-3 cursor-pointer" onClick={() => onSelect(server.id)}>
                     {server.enabled ? (
@@ -794,7 +897,12 @@ function ServerDetailView({
   const [editedName, setEditedName] = useState(server.name);
   const [editedDescription, setEditedDescription] = useState(server.description || '');
   const [editedIconUrl, setEditedIconUrl] = useState(server.iconUrl || '');
-  const [editedCommand, setEditedCommand] = useState(`${server.command} ${(server.args || []).join(' ')}`);
+  const isStreamingServer = server.transportType && server.transportType !== 'stdio';
+  const [editedCommand, setEditedCommand] = useState(
+    isStreamingServer ? '' : `${server.command} ${(server.args || []).join(' ')}`
+  );
+  const [editedUrl, setEditedUrl] = useState(isStreamingServer ? (server.url || '') : '');
+  const [editedTransportType] = useState(server.transportType || 'stdio');
   const [showIconPicker, setShowIconPicker] = useState(false);
   const iconButtonRef = useRef<HTMLButtonElement>(null);
   const [appSyncStates, setAppSyncStates] = useState<Map<string, boolean>>(new Map());
@@ -827,14 +935,17 @@ function ServerDetailView({
   };
 
   const handleSave = () => {
+    const isStreaming = editedTransportType && editedTransportType !== 'stdio';
     const parts = editedCommand.trim().split(/\s+/);
     const updatedServer = {
       ...server,
       name: editedName,
       description: editedDescription,
       iconUrl: editedIconUrl,
-      command: parts[0],
-      args: parts.slice(1),
+      command: isStreaming ? '' : parts[0],
+      args: isStreaming ? [] : parts.slice(1),
+      transportType: editedTransportType,
+      url: isStreaming ? editedUrl : undefined,
     };
     onUpdate(updatedServer);
     setIsEditing(false);
@@ -844,7 +955,9 @@ function ServerDetailView({
     setEditedName(server.name);
     setEditedDescription(server.description || '');
     setEditedIconUrl(server.iconUrl || '');
-    setEditedCommand(`${server.command} ${(server.args || []).join(' ')}`);
+    const isStreaming = server.transportType && server.transportType !== 'stdio';
+    setEditedCommand(isStreaming ? '' : `${server.command} ${(server.args || []).join(' ')}`);
+    setEditedUrl(isStreaming ? (server.url || '') : '');
     setIsEditing(false);
   };
 
@@ -914,8 +1027,13 @@ function ServerDetailView({
                         variant="ghost"
                         size="icon"
                         onClick={() => {
+                          const isStreaming = server.transportType && server.transportType !== 'stdio';
                           const serverConfig = {
-                            [server.id]: {
+                            [server.id]: isStreaming ? {
+                              url: server.url,
+                              transportType: server.transportType,
+                              ...(server.env && { env: server.env }),
+                            } : {
                               command: server.command,
                               args: server.args || [],
                               ...(server.env && { env: server.env }),
@@ -962,22 +1080,46 @@ function ServerDetailView({
                 </div>
               )}
 
+              <div className="flex items-center gap-3 mb-2">
+                <Badge>
+                  {server.transportType && server.transportType !== 'stdio' 
+                    ? (server.transportType === 'streamable-http' ? 'Remote (HTTP)' : 'Remote (SSE)')
+                    : 'Local Command'}
+                </Badge>
+              </div>
+
               <div>
-                <Label>Command</Label>
+                <Label>{server.transportType && server.transportType !== 'stdio' ? 'Server URL' : 'Command'}</Label>
                 {!isEditing ? (
-                  <div className="font-mono text-xs bg-[var(--bg-code)] backdrop-blur-sm text-[var(--text-primary)] p-3 rounded-md overflow-x-auto flex items-center border border-[var(--border-secondary)]">
-                    <span className="text-[var(--text-tertiary)] mr-2">$</span>
-                    <span className="text-[var(--text-accent)]">{server.command}</span>
-                    <span className="ml-2">{(server.args || []).join(' ')}</span>
-                  </div>
+                  server.transportType && server.transportType !== 'stdio' ? (
+                    <div className="font-mono text-xs bg-[var(--bg-code)] backdrop-blur-sm text-[var(--text-primary)] p-3 rounded-md overflow-x-auto flex items-center border border-[var(--border-secondary)]">
+                      <span className="text-[var(--text-accent)]">{server.url}</span>
+                    </div>
+                  ) : (
+                    <div className="font-mono text-xs bg-[var(--bg-code)] backdrop-blur-sm text-[var(--text-primary)] p-3 rounded-md overflow-x-auto flex items-center border border-[var(--border-secondary)]">
+                      <span className="text-[var(--text-tertiary)] mr-2">$</span>
+                      <span className="text-[var(--text-accent)]">{server.command}</span>
+                      <span className="ml-2">{(server.args || []).join(' ')}</span>
+                    </div>
+                  )
                 ) : (
-                  <Input
-                    value={editedCommand}
-                    onChange={(e) => setEditedCommand(e.target.value)}
-                    className="font-mono text-xs"
-                    placeholder="npx -y @modelcontextprotocol/server-name ..."
-                    spellCheck={false}
-                  />
+                  isStreamingServer ? (
+                    <Input
+                      value={editedUrl}
+                      onChange={(e) => setEditedUrl(e.target.value)}
+                      className="font-mono text-xs"
+                      placeholder="https://example.com/mcp"
+                      spellCheck={false}
+                    />
+                  ) : (
+                    <Input
+                      value={editedCommand}
+                      onChange={(e) => setEditedCommand(e.target.value)}
+                      className="font-mono text-xs"
+                      placeholder="npx -y @modelcontextprotocol/server-name ..."
+                      spellCheck={false}
+                    />
+                  )
                 )}
               </div>
             </div>
@@ -1185,6 +1327,7 @@ function ManageAppsView({ apps, servers, onRefresh }: { apps: AppConfig[]; serve
 
   const handleSync = async () => {
     await window.electronAPI.syncServers();
+    toast.success('Servers synced to all apps');
     onRefresh();
   };
 

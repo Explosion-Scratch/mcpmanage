@@ -131,6 +131,8 @@ export class MasterServerStore {
           apps: serverData.apps,
           iconUrl: undefined,
           description: undefined,
+          transportType: serverData.transportType,
+          url: serverData.url,
           createdAt: now,
           updatedAt: now
         };

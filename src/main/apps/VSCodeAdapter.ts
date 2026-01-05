@@ -69,13 +69,23 @@ export class VSCodeAdapter implements AppAdapter {
     const transformedServers: Record<string, any> = {};
     
     for (const [key, server] of Object.entries(servers)) {
-      if (server.settings?.type === 'http' && server.settings?.url) {
+      const isStreamingViaTransport = server.transportType && server.transportType !== 'stdio' && server.url;
+      const isStreamingViaSettings = server.settings?.type === 'http' && server.settings?.url;
+      
+      if (isStreamingViaTransport) {
+        const vsType = server.transportType === 'sse' ? 'sse' : 'http';
         transformedServers[key] = {
-          type: server.settings.type,
-          url: server.settings.url,
-          ...(server.settings.headers && { headers: server.settings.headers }),
-          ...(server.settings.gallery && { gallery: server.settings.gallery }),
-          ...(server.settings.version && { version: server.settings.version }),
+          type: vsType,
+          url: server.url,
+          ...(server.env && { env: server.env }),
+        };
+      } else if (isStreamingViaSettings) {
+        transformedServers[key] = {
+          type: server.settings!.type,
+          url: server.settings!.url,
+          ...(server.settings!.headers && { headers: server.settings!.headers }),
+          ...(server.settings!.gallery && { gallery: server.settings!.gallery }),
+          ...(server.settings!.version && { version: server.settings!.version }),
         };
       } else if (server.command) {
         transformedServers[key] = {

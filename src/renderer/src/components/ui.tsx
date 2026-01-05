@@ -304,3 +304,62 @@ export const IconPicker = ({ value, onChange, onClose, anchorEl }: IconPickerPro
   );
 };
 
+interface ToastMessage {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
+const toastListeners: Set<(toast: ToastMessage) => void> = new Set();
+
+export const toast = {
+  success: (message: string) => {
+    const t: ToastMessage = { id: Date.now().toString(), message, type: 'success' };
+    toastListeners.forEach(listener => listener(t));
+  },
+  error: (message: string) => {
+    const t: ToastMessage = { id: Date.now().toString(), message, type: 'error' };
+    toastListeners.forEach(listener => listener(t));
+  },
+  info: (message: string) => {
+    const t: ToastMessage = { id: Date.now().toString(), message, type: 'info' };
+    toastListeners.forEach(listener => listener(t));
+  },
+};
+
+export const ToastContainer = () => {
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  useEffect(() => {
+    const listener = (t: ToastMessage) => {
+      setToasts(prev => [...prev, t]);
+      setTimeout(() => {
+        setToasts(prev => prev.filter(toast => toast.id !== t.id));
+      }, 3000);
+    };
+    toastListeners.add(listener);
+    return () => { toastListeners.delete(listener); };
+  }, []);
+
+  if (toasts.length === 0) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2">
+      {toasts.map(t => (
+        <div
+          key={t.id}
+          className={cn(
+            'px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium animate-in slide-in-from-right-5 fade-in duration-200 flex items-center gap-2',
+            t.type === 'success' && 'bg-green-600 text-white',
+            t.type === 'error' && 'bg-red-600 text-white',
+            t.type === 'info' && 'bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-secondary)]'
+          )}
+        >
+          {t.type === 'success' && <span>✓</span>}
+          {t.type === 'error' && <span>✕</span>}
+          {t.message}
+        </div>
+      ))}
+    </div>
+  );
+};

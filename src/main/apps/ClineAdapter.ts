@@ -57,6 +57,3 @@ export class ClineAdapter implements AppAdapter {
     return await FileService.writeJSON(this.getPath(), data);
   }
 }
-
-
-

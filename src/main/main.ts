@@ -166,16 +166,19 @@ function setupIPCHandlers() {
     return await mcpManager.readAppConfig(adapter);
   });
 
-  ipcMain.handle('add-server', async (_, name: string, command: string, env?: Record<string, string>, appNames?: string[]) => {
-    const parsed = mcpManager.parseCommand(command);
+  ipcMain.handle('add-server', async (_, name: string, command: string, env?: Record<string, string>, appNames?: string[], transportType?: string, url?: string) => {
+    const isStreaming = transportType === 'sse' || transportType === 'streamable-http';
+    const parsed = isStreaming ? { command: '', args: [] } : mcpManager.parseCommand(command);
     const server: MCPServer = {
       command: parsed.command,
       args: parsed.args,
-      ...(env && { env })
+      ...(env && { env }),
+      ...(transportType && { transportType: transportType as any }),
+      ...(url && { url })
     };
     
-    const targetApps = appNames || mcpManager.getAdapters().map(a => a.name);
-    const success = await mcpManager.addServer(name, server, appNames);
+    const targetApps = appNames ?? [];
+    const success = isStreaming ? true : (targetApps.length > 0 ? await mcpManager.addServer(name, server, targetApps) : true);
     
     if (success) {
       await masterStore.addServer({
@@ -184,6 +187,8 @@ function setupIPCHandlers() {
         command: parsed.command,
         args: parsed.args,
         env,
+        transportType: (transportType || 'stdio') as any,
+        url,
         enabled: true,
         permissions: 'always_ask',
         apps: targetApps
@@ -193,21 +198,26 @@ function setupIPCHandlers() {
     return success;
   });
 
-  ipcMain.handle('update-server', async (_, name: string, command: string, env?: Record<string, string>, appNames?: string[]) => {
-    const parsed = mcpManager.parseCommand(command);
+  ipcMain.handle('update-server', async (_, name: string, command: string, env?: Record<string, string>, appNames?: string[], transportType?: string, url?: string) => {
+    const isStreaming = transportType === 'sse' || transportType === 'streamable-http';
+    const parsed = isStreaming ? { command: '', args: [] } : mcpManager.parseCommand(command);
     const server: MCPServer = {
       command: parsed.command,
       args: parsed.args,
-      ...(env && { env })
+      ...(env && { env }),
+      ...(transportType && { transportType: transportType as any }),
+      ...(url && { url })
     };
     
-    const success = await mcpManager.updateServer(name, server, appNames);
+    const success = isStreaming ? true : await mcpManager.updateServer(name, server, appNames);
     
     if (success) {
       await masterStore.updateServer(name, {
         command: parsed.command,
         args: parsed.args,
         env,
+        transportType: transportType as any,
+        url,
         apps: appNames
       });
     }
@@ -242,7 +252,16 @@ function setupIPCHandlers() {
       return false;
     }
     
-    const server: MCPServer = {
+    const isStreaming = masterServer.transportType && masterServer.transportType !== 'stdio';
+    const server: MCPServer = isStreaming ? {
+      command: '',
+      args: [],
+      url: masterServer.url,
+      transportType: masterServer.transportType,
+      env: masterServer.env,
+      settings: masterServer.settings,
+      enabled: enabled
+    } : {
       command: masterServer.command,
       args: masterServer.args,
       env: masterServer.env,
@@ -285,12 +304,19 @@ function setupIPCHandlers() {
           const adapter = appAdapters.find(a => a.name === appName);
           if (adapter) {
             const appConfig = await mcpManager.readAppConfig(adapter);
-            appConfig[server.id] = {
+            const isStreaming = server.transportType && server.transportType !== 'stdio';
+            appConfig[server.id] = isStreaming ? {
+              command: '',
+              args: [],
+              url: server.url,
+              transportType: server.transportType,
+              env: server.env,
+              settings: server.settings,
+            } : {
               command: server.command,
               args: server.args,
               env: server.env,
               settings: server.settings,
-              enabled: true
             };
             await mcpManager.writeAppConfig(adapter, appConfig);
           }
@@ -320,12 +346,19 @@ function setupIPCHandlers() {
             const adapter = appAdapters.find(a => a.name === appName);
             if (adapter) {
               const appConfig = await mcpManager.readAppConfig(adapter);
-              appConfig[server.id] = {
+              const isStreaming = server.transportType && server.transportType !== 'stdio';
+              appConfig[server.id] = isStreaming ? {
+                command: '',
+                args: [],
+                url: server.url,
+                transportType: server.transportType,
+                env: server.env,
+                settings: server.settings,
+              } : {
                 command: server.command,
                 args: server.args,
                 env: server.env,
                 settings: server.settings,
-                enabled: true
               };
               await mcpManager.writeAppConfig(adapter, appConfig);
             }
@@ -420,7 +453,12 @@ function setupIPCHandlers() {
     const masterServers = await masterStore.getAllServers();
     const mcpServers: any = {};
     masterServers.forEach(server => {
-      mcpServers[server.id] = {
+      const isStreaming = server.transportType && server.transportType !== 'stdio';
+      mcpServers[server.id] = isStreaming ? {
+        url: server.url,
+        transportType: server.transportType,
+        ...(server.env && { env: server.env }),
+      } : {
         command: server.command,
         args: server.args,
         ...(server.env && { env: server.env }),

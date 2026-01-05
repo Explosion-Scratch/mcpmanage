@@ -25,8 +25,8 @@ declare global {
       getApps: () => Promise<AppConfig[]>;
       getAllServers: () => Promise<MasterMCPServer[]>;
       getAppServers: (appName: string) => Promise<MCPServers>;
-      addServer: (name: string, command: string, env?: Record<string, string>, appNames?: string[]) => Promise<boolean>;
-      updateServer: (name: string, command: string, env?: Record<string, string>, appNames?: string[]) => Promise<boolean>;
+      addServer: (name: string, command: string, env?: Record<string, string>, appNames?: string[], transportType?: string, url?: string) => Promise<boolean>;
+      updateServer: (name: string, command: string, env?: Record<string, string>, appNames?: string[], transportType?: string, url?: string) => Promise<boolean>;
       removeServer: (name: string, appNames?: string[]) => Promise<boolean>;
       toggleServer: (name: string, enabled: boolean, appNames?: string[]) => Promise<boolean>;
       parseCommand: (command: string) => Promise<ParsedCommand>;

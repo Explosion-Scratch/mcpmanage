@@ -1,3 +1,5 @@
+export type TransportType = 'stdio' | 'sse' | 'streamable-http';
+
 export interface MCPServer {
   command: string;
   args: string[];
@@ -5,6 +7,8 @@ export interface MCPServer {
   settings?: Record<string, any>;
   source?: string;
   enabled?: boolean;
+  transportType?: TransportType;
+  url?: string;
 }
 
 export interface MCPServers {
